@@ -14,7 +14,7 @@
 </script>
 
 <script>
-  
+
 	export let aisle;
 	import productList from '../../products.json';
 	let aisleProducts = [];
