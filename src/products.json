@@ -1,0 +1,6 @@
+{"productList":
+  [
+  {"name": "Strawberries", "aisle":"Fruits", "price":4.99, "rebate":0 ,"Origin":"Quebec","description":"Yummy yummy in my tummy", "image":"fruits.jpg" },
+  {"name": "Strawberries", "aisle":"Fruits", "price":4.99, "rebate":0 ,"Origin":"Quebec","description":"Yummy yummy in my tummy", "image":"fruits.jpg" },
+  {"name": "Strawberries", "aisle":"Fruits", "price":4.99, "rebate":0 ,"Origin":"Quebec","description":"Yummy yummy in my tummy", "image":"fruits.jpg" }
+]}
