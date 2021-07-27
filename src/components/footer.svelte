@@ -1,4 +1,4 @@
 <script></script>
 <div class='header'>
-  Footer
+  <a href="/backstore/products/">Footer</a>
 </div>

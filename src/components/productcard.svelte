@@ -2,7 +2,7 @@
   export let product;
 </script>
 <div class="p-card">
-  <img src={product.image} alt={product.name} class="bg-image" />
+  <img src={'/'+product.image} alt={product.name} class="bg-image" />
   <div class="image-gradient" />
   <div class="text">
     <h2 class="name">{product.name}</h2>

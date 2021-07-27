@@ -1,6 +1,6 @@
 {"productList":
   [
-  {"name": "Strawberries", "aisle":"Fruits", "price":4.99, "rebate":0 ,"Origin":"Quebec","description":"Yummy yummy in my tummy", "image":"/static/fruits.jpg" },
-  {"name": "Strawberries", "aisle":"Fruits", "price":4.99, "rebate":0 ,"Origin":"Quebec","description":"Yummy yummy in my tummy", "image":"/static/fruits.jpg" },
-  {"name": "Strawberries", "aisle":"Fruits", "price":4.99, "rebate":0 ,"Origin":"Quebec","description":"Yummy yummy in my tummy", "image":"/static/fruits.jpg" }
+  {"name": "Strawberries", "aisle":"Fruits", "price":4.99, "rebate":0 ,"origin":"Quebec","description":"Yummy yummy in my tummy", "image":"fruits.jpg", "amount": 1 },
+  {"name": "White Bread", "aisle":"Fruits", "price":4.99, "rebate":0 ,"origin":"Quebec","description":"Yummy yummy in my tummy", "image":"bread1.jpg", "amount": 1 },
+  {"name": "Strawberries", "aisle":"Fruits", "price":4.99, "rebate":0 ,"origin":"Quebec","description":"Yummy yummy in my tummy", "image":"fruits.jpg", "amount": 1 }
 ]}

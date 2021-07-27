@@ -4,7 +4,6 @@
 }
 html{
   font-family: "Segoe UI", Candara, "Bitstream Vera Sans", "DejaVu Sans", "Bitstream Vera Sans", "Trebuchet MS", Verdana, "Verdana Ref", sans-serif;
-  
   font-variant: small-caps;
 }
 *{
@@ -50,13 +49,13 @@ html{
 
 /* INDEX / HOME */
 
-.home-wrapper, .aisle-wrapper {
+.home-wrapper, .aisle-wrapper, .product-wrapper, .cart-wrapper {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-.banner, .aisle {
+.banner, .aisle, .product, .cart {
   height: 100%;
   max-width: 80vw;
   width: 100%;
@@ -155,3 +154,177 @@ h1 {
   color: white;
   align-self: end;
 }
+
+/* PRODUCT PAGE */
+.product-wrapper > a {
+  margin-top: 1.25rem;
+  color: var(--dark-text);
+}
+.product-wrapper > h1 {
+  margin-top: 0.25rem;
+}
+.product {
+  margin-top: 1.5rem;
+  display: grid;
+  grid-template-columns: 40% 60%;
+  gap: 3rem;
+}
+.product > img {
+  width: 100%;
+  border: 0.25rem solid white;
+  filter: drop-shadow(0px 0.25rem 0.5rem rgba(0, 0, 0, 0.25));
+}
+.product > .information {
+  margin-top: 2rem; /* */
+  color: var(--dark-text);
+  font-weight: 500;
+  display: grid;
+  grid-template-columns: 6rem 8rem;
+  grid-template-rows: 2.5rem 2rem 2rem;
+  gap: 1.5rem 0;
+}
+.product > .information > .prices > .current-price {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.product > .information > button {
+  border: none;
+  background-color: var(--main-color);
+  filter: drop-shadow(0px 0.25rem 0.5rem rgba(0, 0, 0, 0.25));
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: 'Segoe UI', Candara, 'Bitstream Vera Sans', 'DejaVu Sans', 'Bitstream Vera Sans',
+    'Trebuchet MS', Verdana, 'Verdana Ref', sans-serif;
+}
+.product > .information > .origin {
+  grid-area: 2 / 1 / span 1 / span 2;
+  display: flex;
+  align-items: center;
+}
+.product > .information > .origin > svg {
+  height: 1.25rem;
+  margin-left: 1rem;
+}
+.product > .information > .description {
+  grid-area: 3 / 1 / span 1 / span 2;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  border-top: 1px solid var(--main-color);
+  border-bottom: 1px solid var(--main-color);
+  padding: 0.25rem 0;
+}
+.product > .information > .description > svg {
+  height: 0.5rem;
+  margin-left: 1rem;
+}
+
+/* SHOPPING CART */
+
+.cart {
+  display: flex;
+  flex-direction: row;
+  color: var(--dark-text);
+  margin-top: 1.5rem;
+}
+.cart > div {
+  margin-right: 3rem;
+}
+.cart > .items {
+  display: flex;
+  flex-direction: column;
+}
+.cart > .items > .item {
+  display: grid;
+  grid-template-columns: auto auto;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+.cart > .items > .item > img {
+  width: 100%;
+  max-width: 7rem;
+  border: 0.1rem solid white;
+  filter: drop-shadow(0px 0.1rem 0.2rem rgba(0, 0, 0, 0.25));
+  margin-right: 1rem;
+}
+.cart > .items > .item > .text > .name {
+}
+.cart > .items > .item > .text > .price {
+}
+.cart > .items > .item > .text > .buttons > svg {
+  height: 1rem;
+}
+.cart > .summary {
+}
+.cart > .buttons {
+  display: flex;
+  flex-direction: column;
+}
+.cart > .buttons > button, form > button {
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: 'Segoe UI', Candara, 'Bitstream Vera Sans', 'DejaVu Sans', 'Bitstream Vera Sans',
+  'Trebuchet MS', Verdana, 'Verdana Ref', sans-serif;
+  padding: 0.3rem 0.5rem;
+}
+.cart > .buttons > .checkout, form > button{
+  border: none;
+  background-color: var(--main-color);
+  filter: drop-shadow(0px 0.1rem 0.2rem rgba(0, 0, 0, 0.25));
+  color: white;
+}
+.cart > .buttons > .continue{
+  border: 0.1rem solid var(--main-color);
+  background-color: white;
+  filter: drop-shadow(0px 0.1rem 0.2rem rgba(0, 0, 0, 0.25));
+  color: var(--dark-text);
+  font-weight: 700;
+  margin-top: 1rem;
+}
+
+/* HEADER */
+.header-wrapper{
+  width: 100%;
+  height: 3.5rem;
+  background-color: var(--main-color);
+  box-shadow: 0.5rem 0.5rem 0.5rem rgba(0, 0, 0, 0.212);
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+}
+.header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  max-width: 80vw;
+  width: 100%;
+  
+}
+.header > a {
+  height: 2.5rem;
+}
+.header > a > svg.logo {
+  height: 100%;
+  justify-self: flex-end;
+  filter: drop-shadow(0rem 0.1rem 0.2rem rgba(0, 0, 0, 0.486) )
+}
+.header > .nav {
+  display: flex;
+  flex-direction: row;
+  filter: drop-shadow(0rem 0.1rem 0.2rem rgba(0, 0, 0, 0.486) )
+
+}
+.header > .nav > a {
+  color: white;
+  font-weight: 500;
+  margin-left: 1rem;
+}
+.header > .nav > a > .cart-icon {
+  height: 1.5rem;
+}
+
+/* FORMS - LOGIN - SIGN UP */
+
