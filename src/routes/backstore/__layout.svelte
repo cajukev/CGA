@@ -10,17 +10,5 @@
 <div class="grey-bg"><slot /></div>
 
 <style>
-  .backstore-nav-wrapper{
-    text-align: center;
-  }
-  .backstore-nav-wrapper > .nav > a{
-    color: var(--dark-text);
-    
-  }
-  .backstore-nav-wrapper > .nav > a:not(.orders){
-    margin-right: 1rem;
-  }
-	.grey-bg {
-		background-color: #efefef;
-	}
+
 </style>

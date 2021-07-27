@@ -49,13 +49,15 @@ html{
 
 /* INDEX / HOME */
 
-.home-wrapper, .aisle-wrapper, .product-wrapper, .cart-wrapper {
+.home-wrapper, .aisle-wrapper, .product-wrapper, .cart-wrapper ,.aisle-wrapper, .form-wrapper {
   width: 100%;
+  min-height: 80vh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding-bottom: 3rem;
 }
-.banner, .aisle, .product, .cart {
+.banner, .aisle, .product, .cart, .aisles {
   height: 100%;
   max-width: 80vw;
   width: 100%;
@@ -88,6 +90,7 @@ h1 {
   gap: 2rem;
   grid-template-columns: repeat(2, 1fr);
   margin-top: 1.5rem;
+  padding-bottom: 3rem;
 }
 .aisles > a {
   position: relative;
@@ -261,14 +264,14 @@ h1 {
   display: flex;
   flex-direction: column;
 }
-.cart > .buttons > button, form > button {
+.cart > .buttons > button, form > button, form > .buttons > button {
   font-size: 1rem;
   font-weight: 500;
   font-family: 'Segoe UI', Candara, 'Bitstream Vera Sans', 'DejaVu Sans', 'Bitstream Vera Sans',
   'Trebuchet MS', Verdana, 'Verdana Ref', sans-serif;
   padding: 0.3rem 0.5rem;
 }
-.cart > .buttons > .checkout, form > button{
+.cart > .buttons > .checkout, form > button, form > .buttons > button{
   border: none;
   background-color: var(--main-color);
   filter: drop-shadow(0px 0.1rem 0.2rem rgba(0, 0, 0, 0.25));
@@ -328,3 +331,81 @@ h1 {
 
 /* FORMS - LOGIN - SIGN UP */
 
+.form-wrapper{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+form {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-top: 1.5rem;
+  max-width: 30rem;
+  border: 0.1rem solid var(--main-color);
+  background-color: white;  
+  filter: drop-shadow(0px 0.25rem 0.5rem rgba(0, 0, 0, 0.25));
+  padding: 1rem;
+  color: var(--dark-text);
+}
+form > input[type='text'],form > input[type='password'] {
+  border: 0.1rem solid var(--main-color);
+  padding: 0.2rem;
+}
+form > input, form > label{
+  margin-bottom: 0.5rem;
+}
+
+
+/* BACKSTORE */
+.backstore-nav-wrapper{
+  text-align: center;
+}
+.backstore-nav-wrapper > .nav > a{
+  color: var(--dark-text);
+  
+}
+.backstore-nav-wrapper > .nav > a:not(.orders){
+  margin-right: 1rem;
+}
+.grey-bg {
+  background-color: #efefef;
+  min-height: 70vh;
+}
+
+/* FOOTER */
+.footer{
+  background-color: #4E4E4E;
+  width: 100%;
+  height: 20vh;
+  text-align: center;
+  padding-top: 3rem;
+}
+.footer > a{
+  width: 100%;
+  color: white;
+  
+}
+
+/* MEDIA QUERIES */
+
+@media (max-width:1023px) {
+  .products{
+    grid-template-columns: 1fr;
+  }
+  .cart{
+    flex-direction: column;
+  }
+  .cart > .items{
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .cart > .items > .item{
+    margin-right: 1rem;
+  }
+  .cart > .buttons{
+    margin-top: 1rem;
+  }
+
+}

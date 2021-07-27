@@ -1,18 +1,12 @@
 <script>
   import ProductCard from '../components/productcard.svelte'
-  
-	let products = [
-		{ name: 'White Bread', price: 7.99, rebate: 5.0, image: 'bread1.jpg' },
-		{ name: 'White Bread', price: 7.99, rebate: 0.0, image: 'bread1.jpg' },
-		{ name: 'White Bread', price: 7.99, rebate: 5.0, image: 'bread1.jpg' }
-	];
+  import productList from '../products.json';
+	let products = productList.productList.slice(0,3);
 	let aisles = [
-		{ name: 'fruits', image: 'fruits.jpg' },
-		{ name: 'fruits', image: 'fruits.jpg' },
-		{ name: 'fruits', image: 'fruits.jpg' },
-		{ name: 'fruits', image: 'fruits.jpg' },
-		{ name: 'fruits', image: 'fruits.jpg' },
-		{ name: 'fruits', image: 'fruits.jpg' }
+		{ name: 'Fruits', image: 'strawberries.jpg' },
+		{ name: 'Vegetables', image: 'cucumber.jpg' },
+		{ name: 'Meat', image: 'steak.jpg' },
+		{ name: 'Dairy', image: 'milk.jpg' },
 	];
 </script>
 
@@ -29,7 +23,7 @@
     <h1>Aisles</h1>
 		<div class="aisles">
 			{#each aisles as aisle}
-				<a href={'/' + aisle.name}>
+				<a href={'/aisles/' + aisle.name}>
 					<img src={aisle.image} alt={aisle.name} />
 					<h2>{aisle.name}</h2>
 				</a>

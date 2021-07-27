@@ -1,4 +1,7 @@
 <script></script>
-<div class='header'>
-  <a href="/backstore/products/">Footer</a>
+<div class='footer'>
+  <a href="/backstore/products/"> This is an incredibly underdesigned footer which links to the backstore</a>
 </div>
+<style>
+
+</style>

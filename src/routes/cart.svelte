@@ -1,32 +1,22 @@
 <script>
 	import productList from '../products.json';
+	import { cart } from '../stores'
+	let cart_value;
 
-	let addItem = () => {
-		productList.productList[productList.productList.length] = {
-			name: 'Strawberries',
-			aisle: 'Fruits',
-			price: 4.99,
-			rebate: 0,
-			amount: 1,
-			origin: 'Quebec',
-			description: 'Yummy yummy in my tummy',
-			image: 'fruits.jpg'
-		};
-	};
 	let sum = 0;
 	$: {
 		sum = 0;
-		Object.values(productList.productList).map((item) => {
+		Object.values($cart).map((item) => {
 			sum = sum + item.price;
 		});
 	}
 </script>
 
 <div class="cart-wrapper">
-	<h1>Shopping Cart ({productList.productList.length})</h1>
+	<h1>Shopping Cart ({$cart.length})</h1>
 	<div class="cart">
 		<div class="items">
-			{#each productList.productList as product}
+			{#each $cart as product}
 				<div class="item">
 					<img src={'/' + product.image} alt={product.name} />
 					<div class="text">
@@ -50,13 +40,13 @@
 			{/each}
 		</div>
 		<div class="summary">
-			<p><i>{productList.productList.length} Items - ${sum.toFixed(2)}</i></p>
+			<p><i>{$cart.length} Items - ${sum.toFixed(2)}</i></p>
 			<p><i>GST - ${(sum * 0.05).toFixed(2)}</i></p>
 			<p><i>QST - ${(sum * 0.09975).toFixed(2)}</i></p>
 			<p class="total">Total: ${(sum * 1.14975).toFixed(2)}</p>
 		</div>
 		<div class="buttons">
-			<button class='checkout' on:click={addItem}>Checkout</button>
+			<button class='checkout' >Checkout</button>
 			<button class='continue'>Continue Shopping</button>
 		</div>
 	</div>
