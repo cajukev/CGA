@@ -26,6 +26,7 @@
   },
   "type": "module",
   "dependencies": {
-    "faunadb": "^4.3.0"
+    "faunadb": "^4.3.0",
+    "netlify-cli": "^5.2.11"
   }
 }
