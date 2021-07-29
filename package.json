@@ -26,7 +26,8 @@
   },
   "type": "module",
   "dependencies": {
+    "encoding": "^0.1.13",
     "faunadb": "^4.3.0",
-    "netlify-cli": "^5.2.11"
+    "netlify-cli": "^2.37.0"
   }
 }
