@@ -16,6 +16,7 @@
 <script>
 	export let product;
 	import productList from '../../products.json';
+	import {onMount} from 'svelte';
 	let currentProduct;
 	console.log(product);
 	productList.productList.forEach((item) => {
@@ -23,6 +24,23 @@
 			currentProduct = item;
 		}
 	});
+
+	let quantity;
+	onMount(()=> {
+		quantity = localStorage.getItem(`${product}-qty`) || 1;
+	})
+
+	let handleMinus = () => {
+		if(quantity != 1){
+			quantity = quantity -1;
+		}
+		localStorage.setItem(`${product}-qty`,quantity)
+	}
+	let handlePlus = () => {
+		quantity = quantity + 1;
+		localStorage.setItem(`${product}-qty`,quantity)
+
+	}
 </script>
 
 <div class="product-wrapper">
@@ -33,11 +51,25 @@
 		<div class="information">
 			<div class="prices">
 				{#if currentProduct.rebate != 0}
-					<p class="rebate-price">{'$' + (currentProduct.price - currentProduct.rebate)}</p>
-				{:else}
-					<div class="empty" />
+					<p class="rebate-price">{'$' + (currentProduct.price * quantity - currentProduct.rebate * quantity).toFixed(2)}</p>
 				{/if}
-				<p class="current-price">{'$' + currentProduct.price}</p>
+				<p class="current-price">{'$' + (currentProduct.price * quantity).toFixed(2)}</p>
+			</div>
+			<div class="quantityPicker">
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" id="minus" on:click={handleMinus}>
+					<path
+						d="M5 12H19M3 23H21C22.1046 23 23 22.1046 23 21V3C23 1.89543 22.1046 1 21 1H3C1.89543 1 1 1.89543 1 3V21C1 22.1046 1.89543 23 3 23Z"
+						stroke="#82172C"
+					/>
+				</svg>
+
+				{quantity}
+				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" id="plus" on:click={handlePlus}>
+					<path
+						d="M12 5V12M12 12V19M12 12H5M12 12H19M3 23H21C22.1046 23 23 22.1046 23 21V3C23 1.89543 22.1046 1 21 1H3C1.89543 1 1 1.89543 1 3V21C1 22.1046 1.89543 23 3 23Z"
+						stroke="#82172C"
+					/>
+				</svg>
 			</div>
 			<button class="add-to-cart">Add To Cart</button>
 			<div class="origin">
@@ -60,19 +92,26 @@
 				{/if}
 			</div>
 			<div class="description">
-				<p>Detailed Description</p>
-				<svg viewBox="0 0 11 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-					<path
-						d="M5.51288 5.04852L9.41569 0L11 0L6.13115 6H4.88173L0 0L1.59719 0L5.51288 5.04852Z"
-						fill="#561925"
-					/>
-				</svg>
+				<div
+					class="button"
+					on:click={() => {
+						document.getElementById('text').classList.toggle('active');
+						document.getElementById('arrow').classList.toggle('active');
+					}}
+				>
+					<p>Detailed Description</p>
+					<svg viewBox="0 0 11 6" fill="none" id="arrow" xmlns="http://www.w3.org/2000/svg">
+						<path
+							d="M5.51288 5.04852L9.41569 0L11 0L6.13115 6H4.88173L0 0L1.59719 0L5.51288 5.04852Z"
+							fill="#561925"
+						/>
+					</svg>
+				</div>
+				<div class="text" id="text">{currentProduct.description}</div>
 			</div>
 		</div>
 	</div>
 </div>
 
 <style>
-	
-
 </style>

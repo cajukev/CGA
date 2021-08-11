@@ -1,5 +1,12 @@
 <script>
-	
+	import { cart } from '../stores'
+	let totalQuantity
+	$: {
+		totalQuantity = 0;
+		Object.values($cart).map((item) => {
+			totalQuantity = totalQuantity + item.amount;
+		});
+	}
 </script>
 
 <div class="header-wrapper">
@@ -44,7 +51,7 @@
 						fill="white"
 					/>
 					<circle cx="30" cy="16" r="8.5" fill="#912338" stroke="white" />
-					<text x="27" y="21" fill="white" style="font-size: 0.7rem;">1</text>
+					<text x="27" y="21" fill="white" style="font-size: 0.7rem;">{totalQuantity}</text>
 				</svg>
 			</a>
 		</div>
