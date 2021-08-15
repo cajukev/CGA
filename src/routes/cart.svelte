@@ -40,7 +40,8 @@
 		<div class="items">
 			{#each $cart as product}
 				<div class="item">
-					<img src={'/' + product.image} alt={product.name} />
+					<img src="/{product.image}-120.jpg" alt="hi:)" class="bg-image"/>
+
 					<div class="text">
 						<p class="name">{product.name + ' (' + product.amount + ')'}</p>
 						{#if product.rebate != 0}

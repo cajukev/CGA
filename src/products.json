@@ -7,8 +7,9 @@
       "price": 4.49,
       "rebate": 0,
       "quantity": 100,
-      "image": "strawberries.jpg",
-      "aisle": "Fruits"
+      "image": "strawberries",
+      "aisle": "Fruits",
+      "amount": 0
     },
     {
       "name": "Blueberries",
@@ -17,8 +18,9 @@
       "price": 3.49,
       "rebate": 0,
       "quantity": 100,
-      "image": "blueberries.jpg",
-      "aisle": "Fruits"
+      "image": "blueberries",
+      "aisle": "Fruits",
+      "amount": 0
     },
     {
       "name": "Raspberries",
@@ -26,9 +28,10 @@
       "origin": "Quebec",
       "price": 5.99,
       "rebate": 1,
-      "image": "raspberries.jpg",
+      "image": "raspberries",
       "quantity": 100,
-      "aisle": "Fruits"
+      "aisle": "Fruits",
+      "amount": 0
     },
     {
       "name": "Watermelon",
@@ -37,8 +40,9 @@
       "price": 6.49,
       "rebate": 0,
       "quantity": 100,
-      "image": "watermelon.jpg",
-      "aisle": "Fruits"
+      "image": "watermelon",
+      "aisle": "Fruits",
+      "amount": 0
     },
     {
       "name": "Cucumber",
@@ -47,8 +51,9 @@
       "price": 1.49,
       "rebate": 0,
       "quantity": 100,
-      "image": "cucumber.jpg",
-      "aisle": "Vegetables"
+      "image": "cucumber",
+      "aisle": "Vegetables",
+      "amount": 0
     },
     {
       "name": "Tomato",
@@ -57,8 +62,9 @@
       "price": 2.49,
       "rebate": 0,
       "quantity": 100,
-      "image": "tomato.jpg",
-      "aisle": "Vegetables"
+      "image": "tomato",
+      "aisle": "Vegetables",
+      "amount": 0
     },
     {
       "name": "Peas",
@@ -67,8 +73,9 @@
       "price": 3.49,
       "rebate": 0,
       "quantity": 100,
-      "image": "peas.jpg",
-      "aisle": "Vegetables"
+      "image": "peas",
+      "aisle": "Vegetables",
+      "amount": 0
     },
     {
       "name": "Steak",
@@ -77,8 +84,9 @@
       "price": 7.99,
       "rebate": 0,
       "quantity": 100,
-      "image": "steak.jpg",
-      "aisle": "Meat"
+      "image": "steak",
+      "aisle": "Meat",
+      "amount": 0
     },
     {
       "name": "Salami",
@@ -87,8 +95,9 @@
       "price": 31.99,
       "rebate": 0,
       "quantity": 5,
-      "image": "salami.jpg",
-      "aisle": "Meat"
+      "image": "salami",
+      "aisle": "Meat",
+      "amount": 0
     },
     {
       "name": "Milk",
@@ -97,8 +106,9 @@
       "price": 3.99,
       "rebate": 0,
       "quantity": 100,
-      "image": "milk.jpg",
-      "aisle": "Dairy"
+      "image": "milk",
+      "aisle": "Dairy",
+      "amount": 0
     }
   ]
 }

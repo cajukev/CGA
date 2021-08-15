@@ -4,7 +4,6 @@
 	 */
 	export async function load({ page, fetch, session, context }) {
 		const product = page.path.split('/')[2];
-
 		return {
 			props: {
 				product
@@ -17,6 +16,8 @@
 	export let product;
 	import productList from '../../products.json';
 	import {onMount} from 'svelte';
+	import { cart } from '../../stores';
+
 	let currentProduct;
 	console.log(product);
 	productList.productList.forEach((item) => {
@@ -25,21 +26,44 @@
 		}
 	});
 
-	let quantity;
+	let qty;
 	onMount(()=> {
-		quantity = localStorage.getItem(`${product}-qty`) || 1;
+		qty = localStorage.getItem(`${product}-qty`) || 1;
 	})
 
 	let handleMinus = () => {
-		if(quantity != 1){
-			quantity = quantity -1;
+		if(qty != 1){
+			qty = qty -1;
 		}
-		localStorage.setItem(`${product}-qty`,quantity)
+		localStorage.setItem(`${product}-qty`,qty)
 	}
 	let handlePlus = () => {
-		quantity = quantity + 1;
-		localStorage.setItem(`${product}-qty`,quantity)
+		qty = parseInt(qty) + 1;
+		localStorage.setItem(`${product}-qty`,qty)
 
+	}
+	let addToCart = () => {
+		
+		for (var i = 0 ; i < $cart.length ; i++){
+			if($cart[i].name == product){
+				$cart[i].amount = parseInt($cart[i].amount) + qty
+				return false;
+			}
+		}
+		
+		$cart.push(currentProduct)
+		$cart[$cart.indexOf(currentProduct)].amount = qty
+		console.log($cart)
+		/*
+		if($cart[$cart.indexOf(currentProduct)]){
+			
+		}else{
+			let temp = currentProduct;
+			temp.amount = parseInt(temp.amount) + qty
+			$cart.push(temp)
+			console.log(temp)
+			console.log($cart)
+		}*/
 	}
 </script>
 
@@ -47,13 +71,32 @@
 	<a href={'/aisles/' + currentProduct.aisle}>{currentProduct.aisle} Aisle</a>
 	<h1 class="product-name">{currentProduct.name}</h1>
 	<div class="product">
-		<img src={'/' + currentProduct.image} alt={currentProduct.name} />
+		<div class="img-container">
+			<picture>
+				<source
+					srcset="/{currentProduct.name}-120.jpg, /{currentProduct.name}-400.jpg 2x"
+					media="(max-width:500px)"
+					type="image/jpeg"
+				/>
+				<source
+					srcset="/{currentProduct.name}-400.jpg, /{currentProduct.name}-1800.jpg 2x"
+					media="(max-width:768px)"
+					type="image/jpeg"
+				/>
+				<source srcset="/{currentProduct.name}-600.jpg" media="(max-width:1280px)" type="image/jpeg" />
+				<source srcset="/{currentProduct.name}-800.jpg" media="(max-width:1920px)" type="image/jpeg" />
+				<source srcset="/{currentProduct.name}-1200.jpg" type="image/jpeg" />
+				<img src="/{currentProduct.name}-400.jpg" alt="hi:)" />
+			</picture>
+		</div>
+		
+		<!--img src={'/' + currentProduct.image + '-1200.jpg'} alt={currentProduct.name} /-->
 		<div class="information">
 			<div class="prices">
 				{#if currentProduct.rebate != 0}
-					<p class="rebate-price">{'$' + (currentProduct.price * quantity - currentProduct.rebate * quantity).toFixed(2)}</p>
+					<p class="rebate-price">{'$' + (currentProduct.price * qty - currentProduct.rebate * qty).toFixed(2)}</p>
 				{/if}
-				<p class="current-price">{'$' + (currentProduct.price * quantity).toFixed(2)}</p>
+				<p class="current-price">{'$' + (currentProduct.price * qty).toFixed(2)}</p>
 			</div>
 			<div class="quantityPicker">
 				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" id="minus" on:click={handleMinus}>
@@ -63,7 +106,7 @@
 					/>
 				</svg>
 
-				{quantity}
+				{qty}
 				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" id="plus" on:click={handlePlus}>
 					<path
 						d="M12 5V12M12 12V19M12 12H5M12 12H19M3 23H21C22.1046 23 23 22.1046 23 21V3C23 1.89543 22.1046 1 21 1H3C1.89543 1 1 1.89543 1 3V21C1 22.1046 1.89543 23 3 23Z"
@@ -71,7 +114,7 @@
 					/>
 				</svg>
 			</div>
-			<button class="add-to-cart">Add To Cart</button>
+			<button class="add-to-cart" on:click={addToCart}>Add To Cart</button>
 			<div class="origin">
 				<i>Made in {currentProduct.origin}</i>
 				{#if currentProduct.origin == 'Quebec'}

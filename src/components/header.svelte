@@ -51,7 +51,7 @@
 						fill="white"
 					/>
 					<circle cx="30" cy="16" r="8.5" fill="#912338" stroke="white" />
-					<text x="27" y="21" fill="white" style="font-size: 0.7rem;">{totalQuantity}</text>
+					<text x={28 - totalQuantity.toString().length*2} y={"21"} fill="white" style={`font-size: ${0.8-totalQuantity.toString().length/10}rem;`}>{totalQuantity}</text>
 				</svg>
 			</a>
 		</div>
