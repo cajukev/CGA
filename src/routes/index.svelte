@@ -37,9 +37,9 @@
 								media="(max-width:768px)"
 								type="image/jpeg"
 							/>
-							<source srcset="/{aisle.image}-600.jpg" media="(max-width:1280px)" type="image/jpeg" />
-							<source srcset="/{aisle.image}-800.jpg" media="(max-width:1920px)" type="image/jpeg" />
-							<source srcset="/{aisle.image}-1200.jpg" type="image/jpeg" />
+							<source srcset="/{aisle.image}-400.jpg" media="(max-width:1280px)" type="image/jpeg" />
+							<source srcset="/{aisle.image}-600.jpg" media="(max-width:1920px)" type="image/jpeg" />
+							<source srcset="/{aisle.image}-800.jpg" type="image/jpeg" />
 							<img src="/{aisle.image}-400.jpg" alt="hi:)" class="bg-image"/>
 						</picture>
 					</div>
