@@ -10,7 +10,7 @@
         type="image/jpeg"
       />
       <source
-        srcset="/{product.name}-400.jpg, /{product.name}-1800.jpg 2x"
+        srcset="/{product.name}-400.jpg, /{product.name}-800.jpg 2x"
         media="(max-width:768px)"
         type="image/jpeg"
       />
@@ -25,14 +25,14 @@
   <div class="text">
     <h2 class="name">{product.name}</h2>
     {#if product.rebate != 0}
-      <p class="rebate-price">{'$' + (product.price - product.rebate)}</p>
+      <p class="rebate-price">{'$' + product.price}</p>
     {:else}
       <div class="empty" />
     {/if}
     <a href={'/products/' + product.name.split(' ').join('-')} class="learn-more"
       >Learn More</a
     >
-    <h2 class="price">{'$' + product.price}</h2>
+    <h2 class="price">{'$' + (product.price - product.rebate)}</h2>
   </div>
 </div>
 

@@ -257,6 +257,9 @@ h1 {
   font-size: 1.1rem;
   font-weight: 700;
 }
+.product>.information>.prices>.rebate-price {
+  text-decoration: strike-through;
+}
 
 .product>.information>.quantityPicker {
   display: flex;

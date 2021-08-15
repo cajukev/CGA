@@ -79,7 +79,7 @@
 					type="image/jpeg"
 				/>
 				<source
-					srcset="/{currentProduct.name}-400.jpg, /{currentProduct.name}-1800.jpg 2x"
+					srcset="/{currentProduct.name}-400.jpg, /{currentProduct.name}-800.jpg 2x"
 					media="(max-width:768px)"
 					type="image/jpeg"
 				/>
@@ -94,9 +94,9 @@
 		<div class="information">
 			<div class="prices">
 				{#if currentProduct.rebate != 0}
-					<p class="rebate-price">{'$' + (currentProduct.price * qty - currentProduct.rebate * qty).toFixed(2)}</p>
+					<p class="rebate-price"><s>{'$' + (currentProduct.price * qty).toFixed(2)}</s></p>
 				{/if}
-				<p class="current-price">{'$' + (currentProduct.price * qty).toFixed(2)}</p>
+				<p class="current-price">{'$' + (currentProduct.price * qty - currentProduct.rebate * qty).toFixed(2)}</p>
 			</div>
 			<div class="quantityPicker">
 				<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" id="minus" on:click={handleMinus}>

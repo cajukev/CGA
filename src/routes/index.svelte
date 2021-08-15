@@ -33,7 +33,7 @@
 								type="image/jpeg"
 							/>
 							<source
-								srcset="/{aisle.image}-400.jpg, /{aisle.image}-1800.jpg 2x"
+								srcset="/{aisle.image}-400.jpg, /{aisle.image}-800.jpg 2x"
 								media="(max-width:768px)"
 								type="image/jpeg"
 							/>
