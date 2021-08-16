@@ -74,19 +74,22 @@
 		<div class="img-container">
 			<picture>
 				<source
-					srcset="/{currentProduct.name}-120.jpg, /{currentProduct.name}-400.jpg 2x"
-					media="(max-width:500px)"
-					type="image/jpeg"
+					srcset="/{currentProduct.name}-400.webp, /{currentProduct.name}-800.webp 2x"
+					media="(max-width:600px)"
+					type="image/webp"
 				/>
 				<source
 					srcset="/{currentProduct.name}-400.jpg, /{currentProduct.name}-800.jpg 2x"
-					media="(max-width:768px)"
+					media="(max-width:600px)"
 					type="image/jpeg"
 				/>
-				<source srcset="/{currentProduct.name}-600.jpg" media="(max-width:1280px)" type="image/jpeg" />
-				<source srcset="/{currentProduct.name}-800.jpg" media="(max-width:1920px)" type="image/jpeg" />
-				<source srcset="/{currentProduct.name}-1200.jpg" type="image/jpeg" />
-				<img src="/{currentProduct.name}-400.jpg" alt="hi:)" />
+				<source srcset="/{currentProduct.name}-600.webp" media="(max-width:820px)" type="image/webp" />
+				<source srcset="/{currentProduct.name}-600.jpg" media="(max-width:820px)" type="image/jpeg" />
+				<source srcset="/{currentProduct.name}-400.webp" media="(max-width:1023px)" type="image/webp" />
+				<source srcset="/{currentProduct.name}-400.jpg" media="(max-width:1023px)" type="image/jpeg" />
+				<source srcset="/{currentProduct.name}-600.webp" type="image/webp" />
+				<source srcset="/{currentProduct.name}-600.jpg" type="image/jpeg" />
+				<img src="/{currentProduct.name}-400.jpg" alt="hi:)" class="bg-image" />
 			</picture>
 		</div>
 		

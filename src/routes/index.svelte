@@ -28,17 +28,30 @@
 					<div class="img-container">
 						<picture>
 							<source
+								srcset="/{aisle.image}-120.webp, /{aisle.image}-400.webp 2x"
+								media="(max-width:500px)"
+								type="image/webp"
+							/>
+							<source
 								srcset="/{aisle.image}-120.jpg, /{aisle.image}-400.jpg 2x"
 								media="(max-width:500px)"
 								type="image/jpeg"
+							/>
+							<source
+								srcset="/{aisle.image}-400.webp, /{aisle.image}-800.webp 2x"
+								media="(max-width:500px)"
+								type="image/webp"
 							/>
 							<source
 								srcset="/{aisle.image}-400.jpg, /{aisle.image}-800.jpg 2x"
 								media="(max-width:768px)"
 								type="image/jpeg"
 							/>
+							<source srcset="/{aisle.image}-400.webp" media="(max-width:1280px)" type="image/webp" />
 							<source srcset="/{aisle.image}-400.jpg" media="(max-width:1280px)" type="image/jpeg" />
+							<source srcset="/{aisle.image}-600.webp" media="(max-width:1920px)" type="image/webp" />
 							<source srcset="/{aisle.image}-600.jpg" media="(max-width:1920px)" type="image/jpeg" />
+							<source srcset="/{aisle.image}-800.webp" type="image/webp" />
 							<source srcset="/{aisle.image}-800.jpg" type="image/jpeg" />
 							<img src="/{aisle.image}-400.jpg" alt="hi:)" class="bg-image"/>
 						</picture>

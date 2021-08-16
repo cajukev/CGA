@@ -8,6 +8,14 @@ export async function get({ params }) {
   const products = client.query(q.Map(
     q.Paginate(q.Match(q.Index("all_products"))),
     q.Lambda((x) => q.Get(x))))
-  .then((ret) => {console.log(ret.data);})
+  .then((ret) => {
+    let data = ret.data
+    console.log(ret.data);
+    return {
+      body: {
+        data
+      }
+    };
+  })
   
 };
