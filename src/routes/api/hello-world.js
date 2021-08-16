@@ -12,10 +12,8 @@ export async function get({ params }) {
     let data = ret.data
     console.log(ret.data);
     return {
-      body: {
-        data
-      }
-    };
+      body: data
+    }
   })
   
 };

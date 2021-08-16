@@ -1,3 +1,16 @@
+<script context="module">
+	export const load = async({fetch}) => {
+		const res = await fetch("./api/hello-world")
+		const data = await res;
+		console.log(await data)
+		return {
+			props: {
+				data
+			}
+		}
+	}
+</script>
+
 <script>
   import ProductCard from '../components/productcard.svelte'
   import productList from '../products.json';
@@ -8,9 +21,12 @@
 		{ name: 'Meat', image: 'steak' },
 		{ name: 'Dairy', image: 'milk' },
 	];
+
+	export let data
 </script>
 
 <div class="home-wrapper">
+	{data}
 	<div class="banner">
 		<h1>Today’s Featured Products</h1>
 		<div class="products">
