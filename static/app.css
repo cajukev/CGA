@@ -531,7 +531,15 @@ form>label {
 
 /* MEDIA QUERIES */
 
-@media (max-width:1023px) {
+@media (max-width:1280px) {
+  .banner,
+.aisle,
+.product,
+.cart,
+.aisles,
+.header {
+  max-width: 90vw;
+}
   .products {
     grid-template-columns: 1fr;
   }
@@ -551,6 +559,12 @@ form>label {
 
   .cart>.buttons {
     margin-top: 1rem;
+  }
+  .p-card .img-container{
+    padding-top: 8rem;
+  }
+  .p-card img{
+    object-fit: cover;
   }
 
 }

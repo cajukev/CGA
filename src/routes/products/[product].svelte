@@ -85,8 +85,8 @@
 				/>
 				<source srcset="/{currentProduct.name}-600.webp" media="(max-width:820px)" type="image/webp" />
 				<source srcset="/{currentProduct.name}-600.jpg" media="(max-width:820px)" type="image/jpeg" />
-				<source srcset="/{currentProduct.name}-400.webp" media="(max-width:1023px)" type="image/webp" />
-				<source srcset="/{currentProduct.name}-400.jpg" media="(max-width:1023px)" type="image/jpeg" />
+				<source srcset="/{currentProduct.name}-400.webp" media="(max-width:1600px)" type="image/webp" />
+				<source srcset="/{currentProduct.name}-400.jpg" media="(max-width:1600px)" type="image/jpeg" />
 				<source srcset="/{currentProduct.name}-600.webp" type="image/webp" />
 				<source srcset="/{currentProduct.name}-600.jpg" type="image/jpeg" />
 				<img src="/{currentProduct.name}-400.jpg" alt="hi:)" class="bg-image" />
