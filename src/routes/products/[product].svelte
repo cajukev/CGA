@@ -2,8 +2,10 @@
 	/**
 	 * @type {import('@sveltejs/kit').Load}
 	 */
+	let productList;
 	export async function load({ page, fetch, session, context }) {
 		const product = page.path.split('/')[2];
+		productList = context.productList
 		return {
 			props: {
 				product
@@ -12,20 +14,19 @@
 	}
 </script>
 
+
 <script>
 	export let product;
-	import productList from '../../products.json';
 	import {onMount} from 'svelte';
 	import { cart } from '../../stores';
 
 	let currentProduct;
-	console.log(product);
-	productList.productList.forEach((item) => {
+	productList.forEach((item) => {
 		if (product === item.name.split(' ').join('-')) {
 			currentProduct = item;
 		}
 	});
-
+	console.log(currentProduct.aisle)
 	let qty;
 	onMount(()=> {
 		qty = localStorage.getItem(`${product}-qty`) || 1;
