@@ -46,6 +46,8 @@
 
 <div class="home-wrapper">
 	<div class="banner">
+		
+			
 		<h1>Welcome to CGA<br />Here are today’s deals:</h1>
 		<div class="products">
 			{#each products as product}
@@ -143,7 +145,6 @@
 	.aisles-wrapper {
 		border-bottom: 0.1rem var(--main-color) solid;
 	}
-
 	.aisle-preview {
 		width: 100%;
 		position: relative;
@@ -167,7 +168,8 @@
 		height: 100%;
 		width: 100%;
 		object-fit: cover;
-		filter: brightness(0.5) saturate(0.5);
+		object-position: fixed;
+		filter: brightness(0.5);
 	}
 	.aisle-preview .aisle-name {
 		font-size: 2rem;

@@ -75,7 +75,7 @@ html {
 .banner,
 .product,
 .aisle,
-.cart{
+.cart {
   height: 100%;
   max-width: 80vw;
   width: 100%;
@@ -85,6 +85,8 @@ h1 {
   margin-top: 2rem;
   color: var(--dark-text);
   font-weight: 700;
+  text-shadow: 0 0.1rem 0.2rem rgba(0, 0, 0, 0.35);
+
 }
 
 .home-wrapper h1 {
@@ -107,7 +109,7 @@ h1 {
   margin-top: 1.5rem;
   box-shadow: 0 -0.25rem 0.5rem rgba(0, 0, 0, 0.15);
   z-index: 1;
-  
+
 }
 
 /* PRODUCT CARD */
@@ -118,6 +120,7 @@ h1 {
   filter: drop-shadow(0px 0.25rem 0.5rem rgba(0, 0, 0, 0.25));
   color: white;
 }
+
 .p-card>.img-container {
   position: relative;
   height: 0;
@@ -216,6 +219,7 @@ h1 {
   font-size: 1.1rem;
   font-weight: 700;
 }
+
 .product>.information>.prices>.rebate-price {
   text-decoration: strike-through;
 }
@@ -491,13 +495,15 @@ form>label {
 /* MEDIA QUERIES */
 
 @media (max-width:1280px) {
+
   .banner,
-.product,
-.cart,
-.aisles,
-.header {
-  max-width: 90vw;
-}
+  .product,
+  .cart,
+  .aisles,
+  .header {
+    max-width: 90vw;
+  }
+
   .products {
     grid-template-columns: 1fr;
   }
@@ -518,10 +524,12 @@ form>label {
   .cart>.buttons {
     margin-top: 1rem;
   }
-  .p-card .img-container{
+
+  .p-card .img-container {
     padding-top: 8rem;
   }
-  .p-card img{
+
+  .p-card img {
     object-fit: cover;
   }
 

@@ -128,7 +128,7 @@
 	}
 	.aisles-wrapper {
 		border-bottom: 0.1rem var(--main-color) solid;
-		background-color: white;
+		background-color: transparent;
 		box-shadow: none;
 	}
 	.aisles-wrapper > h1 {
