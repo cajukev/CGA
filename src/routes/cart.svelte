@@ -32,6 +32,33 @@
 		$cart[$cart.indexOf(product)].amount = $cart[$cart.indexOf(product)].amount - 1;
 		$cart.splice($cart.indexOf(product), 1);
 	};
+
+	let checkout = async () => {
+		let secret = JSON.parse(localStorage.getItem('userCredentials')).secret
+		let email = JSON.parse(localStorage.getItem('userCredentials')).email
+		const res = await fetch('/api/checkout', {
+			method: 'POST',
+			body: JSON.stringify({ secret: secret, user: email, cart: $cart })
+		})
+			.catch((err)=>{return err})
+			.then((response) => response.json())
+			.then((json) => {
+				console.log(json.data)
+				switch(json.data){
+					case '':
+						break;
+					case 'user':
+						goto('/')
+						break;
+					case 'manager':
+						goto('/backstore/products')
+						break;
+				}
+				
+				return json;
+			});
+			$cart = []
+	};
 </script>
 
 <div class="cart-wrapper">
@@ -45,9 +72,9 @@
 					<div class="text">
 						<p class="name">{product.name + ' (' + product.amount + ')'}</p>
 						{#if product.rebate != 0}
-							<p class="price">{'$' + (product.price - product.rebate)}</p>
+							<p class="price">{'$' + (product.price - product.rebate).toFixed(2)}</p>
 						{:else}
-							<p class="price">{'$' + product.price}</p>
+							<p class="price">{'$' + (parseFloat(product.price).toFixed(2))}</p>
 						{/if}
 						<div class="buttons">
 							<span on:click={handlePlus(product)}>+</span>
@@ -69,8 +96,8 @@
 			<p class="total">Total: ${(sum * 1.14975).toFixed(2)}</p>
 		</div>
 		<div class="buttons">
-			<button class="checkout">Checkout</button>
-			<button class="continue">Continue Shopping</button>
+			<button class="checkout" on:click={() => checkout()}>Checkout</button>
+			<a sveltekit:prefetch class="continue" href="/">Continue Shopping</a>
 		</div>
 	</div>
 </div>

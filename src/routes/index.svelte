@@ -1,18 +1,29 @@
 <script context="module">
 	let productList;
-	export async function load({ page, fetch, session, context }) {
-		productList = context.productList;
-		return true;
-	}
+	export const load = async ({ fetch }) => {
+		const res = await fetch('/api/productlist')
+			.then((response) => response.json())
+			.then((json) => {
+				return json;
+			});
+		const data = await res;
+		let productList = [];
+		data.data.forEach((product) => {
+			productList.push(product.data);
+		});
+		return {
+			props: { productList: productList }
+		};
+	};
 </script>
 
 <script>
 	import ProductCard from '../components/productcard.svelte';
-
+	export let productList
 	let aisles = [
 		{ name: 'Fruits', image: 'strawberries', products: [] },
 		{ name: 'Vegetables', image: 'cucumber', products: [] },
-		{ name: 'Meat', image: 'steak', products: [] },
+		{ name: 'Meats', image: 'steak', products: [] },
 		{ name: 'Dairy', image: 'milk', products: [] }
 	];
 	productList.forEach((product) => {
@@ -40,7 +51,6 @@
 				break;
 		}
 	});
-	console.log(aisles);
 	let products = productList.slice(0, 3);
 </script>
 
@@ -48,7 +58,7 @@
 	<div class="banner">
 		
 			
-		<h1>Welcome to CGA<br />Here are today’s deals:</h1>
+		<h1>Welcome to CGA 🏪<br />Here are today’s deals:</h1>
 		<div class="products">
 			{#each products as product}
 				<ProductCard {product} />
@@ -106,12 +116,12 @@
 								<picture>
 									<source
 										srcset="/{product.image}-120.webp, /{product.image}-240.webp 2x"
-										media="(max-width:1000px)"
+										media="(max-width:800px)"
 										type="image/webp"
 									/>
 									<source
 										srcset="/{product.image}-120.jpg, /{product.image}-240.jpg 2x"
-										media="(max-width:1000px)"
+										media="(max-width:800px)"
 										type="image/jpeg"
 									/>
 									<source
@@ -122,15 +132,14 @@
 										srcset="/{product.image}-240.jpg, /{product.image}-400.jpg 2x"
 										type="image/jpeg"
 									/>
-
 									<img src="/{product.image}-240.jpg" alt="hi:)" class="bg-image" />
 								</picture>
 							</div>
-							<a href="/products/{product.name}">{product.name}</a>
+							<a sveltekit:prefetch href="/products/{product.name}">{product.name}</a>
 						</div>
 					{/each}
 					<div class="clear-box">
-						<a href="/aisles/{aisle.name}" class="more">More</a>
+						<a sveltekit:prefetch href="/aisles/{aisle.name}" class="more">More</a>
 					</div>
 				</div>
 			</div>
@@ -200,7 +209,7 @@
 		position: relative;
 		height: 0;
 		padding-top: 100%;
-		width: 6rem;
+		width: 8rem;
 	}
 	.aisle-preview .aisle-products .product-box .img-container img {
 		position: absolute;
@@ -226,7 +235,7 @@
 		box-shadow: 0 0.1rem 0.5rem rgb(0, 0, 0);
 	}
 	.aisle-preview .aisle-products .clear-box .more {
-		width: 6rem;
+		width: 8rem;
 		text-align: center;
 		font-size: 1.5rem;
 		font-weight: 700;

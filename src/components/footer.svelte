@@ -1,6 +1,6 @@
 <script></script>
 <div class='footer'>
-  <a href="/backstore/products/"> This is an incredibly underdesigned footer which links to the backstore</a>
+  <a sveltekit:prefetch href="/backstore/products/"> This is an incredibly underdesigned footer which links to the backstore</a>
 </div>
 <style>
 

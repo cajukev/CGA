@@ -1,16 +1,28 @@
 <script context="module">
 	let productList;
 	export async function load({ page, fetch, session, context }) {
-		productList = context.productList;
-		return true;
+		const res = await fetch('/api/productlist')
+			.then((response) => response.json())
+			.then((json) => {
+				return json;
+			});
+		const data = await res;
+		let productList = [];
+		data.data.forEach((product) => {
+			productList.push(product.data);
+		});
+		return {
+			props: { productList: productList}
+		};
 	}
 </script>
 
 <script>
+	export let productList
 	let aisles = [
 		{ name: 'Fruits', image: 'strawberries', products: [] },
 		{ name: 'Vegetables', image: 'cucumber', products: [] },
-		{ name: 'Meat', image: 'steak', products: [] },
+		{ name: 'Meats', image: 'steak', products: [] },
 		{ name: 'Dairy', image: 'milk', products: [] }
 	];
 	productList.forEach((product) => {
@@ -111,11 +123,11 @@
 								<img src="/{product.image}-240.jpg" alt="hi:)" class="bg-image" />
 							</picture>
 						</div>
-						<a href="/products/{product.name}">{product.name}</a>
+						<a sveltekit:prefetch href="/products/{product.name}">{product.name}</a>
 					</div>
 				{/each}
 				<div class="clear-box">
-					<a href="/aisles/{aisle.name}" class="more">More</a>
+					<a sveltekit:prefetch href="/aisles/{aisle.name}" class="more">More</a>
 				</div>
 			</div>
 		</div>

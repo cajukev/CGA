@@ -4,49 +4,56 @@
 	 */
 	let productList;
 	export async function load({ page, fetch, session, context }) {
-		const product = page.path.split('/')[2];
-		productList = context.productList
+		const productName = page.path.split('/')[2];
+		const res = await fetch('/api/productlist')
+			.then((response) => response.json())
+			.then((json) => {
+				return json;
+			});
+		const data = await res;
+		let productList = [];
+		data.data.forEach((product) => {
+			productList.push(product.data);
+		});
 		return {
-			props: {
-				product
-			}
+			props: { productList: productList, productName: productName }
 		};
 	}
 </script>
 
 
 <script>
-	export let product;
+	export let productName, productList;
 	import {onMount} from 'svelte';
 	import { cart } from '../../stores';
 
 	let currentProduct;
 	productList.forEach((item) => {
-		if (product === item.name.split(' ').join('-')) {
+		if (productName === item.name.split(' ').join('-')) {
 			currentProduct = item;
 		}
 	});
 	console.log(currentProduct.aisle)
 	let qty;
 	onMount(()=> {
-		qty = localStorage.getItem(`${product}-qty`) || 1;
+		qty = localStorage.getItem(`${productName}-qty`) || 1;
 	})
 
 	let handleMinus = () => {
 		if(qty != 1){
 			qty = qty -1;
 		}
-		localStorage.setItem(`${product}-qty`,qty)
+		localStorage.setItem(`${productName}-qty`,qty)
 	}
 	let handlePlus = () => {
 		qty = parseInt(qty) + 1;
-		localStorage.setItem(`${product}-qty`,qty)
+		localStorage.setItem(`${productName}-qty`,qty)
 
 	}
 	let addToCart = () => {
 		
 		for (var i = 0 ; i < $cart.length ; i++){
-			if($cart[i].name == product){
+			if($cart[i].name == productName){
 				$cart[i].amount = parseInt($cart[i].amount) + qty
 				return false;
 			}
@@ -55,42 +62,33 @@
 		$cart.push(currentProduct)
 		$cart[$cart.indexOf(currentProduct)].amount = qty
 		console.log($cart)
-		/*
-		if($cart[$cart.indexOf(currentProduct)]){
-			
-		}else{
-			let temp = currentProduct;
-			temp.amount = parseInt(temp.amount) + qty
-			$cart.push(temp)
-			console.log(temp)
-			console.log($cart)
-		}*/
+	
 	}
 </script>
 
 <div class="product-wrapper">
-	<a href={'/aisles/' + currentProduct.aisle}>{currentProduct.aisle} Aisle</a>
+	<a sveltekit:prefetch href={'/aisles/' + currentProduct.aisle}>{currentProduct.aisle} Aisle</a>
 	<h1 class="product-name">{currentProduct.name}</h1>
 	<div class="product">
 		<div class="img-container">
 			<picture>
 				<source
-					srcset="/{currentProduct.name}-400.webp, /{currentProduct.name}-800.webp 2x"
+					srcset="/{currentProduct.image}-400.webp, /{currentProduct.image}-800.webp 2x"
 					media="(max-width:600px)"
 					type="image/webp"
 				/>
 				<source
-					srcset="/{currentProduct.name}-400.jpg, /{currentProduct.name}-800.jpg 2x"
+					srcset="/{currentProduct.image}-400.jpg, /{currentProduct.image}-800.jpg 2x"
 					media="(max-width:600px)"
 					type="image/jpeg"
 				/>
-				<source srcset="/{currentProduct.name}-600.webp" media="(max-width:820px)" type="image/webp" />
-				<source srcset="/{currentProduct.name}-600.jpg" media="(max-width:820px)" type="image/jpeg" />
-				<source srcset="/{currentProduct.name}-400.webp" media="(max-width:1600px)" type="image/webp" />
-				<source srcset="/{currentProduct.name}-400.jpg" media="(max-width:1600px)" type="image/jpeg" />
-				<source srcset="/{currentProduct.name}-600.webp" type="image/webp" />
-				<source srcset="/{currentProduct.name}-600.jpg" type="image/jpeg" />
-				<img src="/{currentProduct.name}-400.jpg" alt="hi:)" class="bg-image" />
+				<source srcset="/{currentProduct.image}-600.webp" media="(max-width:820px)" type="image/webp" />
+				<source srcset="/{currentProduct.image}-600.jpg" media="(max-width:820px)" type="image/jpeg" />
+				<source srcset="/{currentProduct.image}-400.webp" media="(max-width:1600px)" type="image/webp" />
+				<source srcset="/{currentProduct.image}-400.jpg" media="(max-width:1600px)" type="image/jpeg" />
+				<source srcset="/{currentProduct.image}-600.webp" type="image/webp" />
+				<source srcset="/{currentProduct.image}-600.jpg" type="image/jpeg" />
+				<img src="/{currentProduct.image}-400.jpg" alt="hi:)" class="bg-image" />
 			</picture>
 		</div>
 		

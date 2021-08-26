@@ -1,12 +1,26 @@
 <script>
-	import { cart } from '../stores'
-	let totalQuantity
+import { Logout } from 'faunadb';
+
+	import { cart, userCredentials } from '../stores';
+	let totalQuantity;
 	$: {
 		totalQuantity = 0;
 		Object.values($cart).map((item) => {
 			totalQuantity = totalQuantity + item.amount;
 		});
 	}
+	let logout = async () => {
+		const res = await fetch('/api/login', {
+			method: 'POST',
+			body: JSON.stringify({ secret: $userCredentials.secret})
+		})
+			.catch((err)=>{return err})
+			.then((json) => {
+				$userCredentials.secret = ''
+				$userCredentials.type = ''
+				return json;
+			});
+	};
 </script>
 
 <div class="header-wrapper">
@@ -35,23 +49,36 @@
 			</svg>
 		</a>
 		<div class="nav">
-			<a href="/signup">
-				<p>Sign Up</p>
-			</a>
-			<a href="/login">
-				<p>Login</p>
-			</a>
-			<a href="/aisles">
+			{#if $userCredentials.type.length == 0}
+				<a href="/signup">
+					<p>Sign Up</p>
+				</a>
+				<a href="/login">
+					<p>Login</p>
+				</a>
+				{:else}
+				<a on:click={() => logout()} href="/">
+					<p>Logout</p>
+				</a>
+			{/if}
+
+			<a sveltekit:prefetch href="/aisles">
 				<p>Aisles</p>
 			</a>
-			<a href="/cart">
+			<a sveltekit:prefetch href="/cart">
 				<svg class="cart-icon" viewBox="0 0 39 28" fill="none" xmlns="http://www.w3.org/2000/svg">
 					<path
 						d="M20.3624 15.4C21.412 15.4 22.3357 14.826 22.8115 13.958L27.8217 4.872C28.3395 3.948 27.6677 2.8 26.6041 2.8H5.89181L4.5763 0H0V2.8H2.79896L7.83709 13.426L5.94779 16.842C4.92617 18.718 6.26967 21 8.39688 21H25.1906V18.2H8.39688L9.93631 15.4H20.3624ZM7.22132 5.6H24.225L20.3624 12.6H10.5381L7.22132 5.6ZM8.39688 22.4C6.85745 22.4 5.61192 23.66 5.61192 25.2C5.61192 26.74 6.85745 28 8.39688 28C9.93631 28 11.1958 26.74 11.1958 25.2C11.1958 23.66 9.93631 22.4 8.39688 22.4ZM22.3917 22.4C20.8523 22.4 19.6067 23.66 19.6067 25.2C19.6067 26.74 20.8523 28 22.3917 28C23.9311 28 25.1906 26.74 25.1906 25.2C25.1906 23.66 23.9311 22.4 22.3917 22.4Z"
 						fill="white"
 					/>
 					<circle cx="30" cy="16" r="8.5" fill="#912338" stroke="white" />
-					<text x={28 - totalQuantity.toString().length*2} y={"21"} fill="white" style={`font-size: ${0.8-totalQuantity.toString().length/10}rem;`}>{totalQuantity}</text>
+					<text
+						x={28 - totalQuantity.toString().length * 2}
+						y={'21'}
+						fill="white"
+						style={`font-size: ${0.8 - totalQuantity.toString().length / 10}rem;`}
+						>{totalQuantity}</text
+					>
 				</svg>
 			</a>
 		</div>
@@ -59,5 +86,4 @@
 </div>
 
 <style lang="scss">
-
 </style>

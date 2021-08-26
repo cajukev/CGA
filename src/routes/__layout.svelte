@@ -1,19 +1,5 @@
 <script context="module">
-	export const load = async ({ fetch }) => {
-		const res = await fetch('/api/list')
-			.then((response) => response.json())
-			.then((json) => {
-				return json;
-			});
-		const data = await res;
-		let productList = [];
-		data.data.forEach((product) => {
-			productList.push(product.data);
-		});
-		return {
-			context: { productList }
-		};
-	};
+
 </script>
 
 <script>
@@ -53,6 +39,6 @@
 		width: 70vw;
 		z-index: -1;
 		right: 5rem;
-		top: 4rem;
+		top: 5rem;
 	}
 </style>

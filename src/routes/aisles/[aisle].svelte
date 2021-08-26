@@ -2,23 +2,30 @@
 	/**
 	 * @type {import('@sveltejs/kit').Load}
 	 */
+	 let productList;
 	export async function load({ page, fetch, session, context }) {
 		const aisle = page.path.split('/')[2];
-
+		const res = await fetch('/api/productlist')
+			.then((response) => response.json())
+			.then((json) => {
+				return json;
+			});
+		const data = await res;
+		let productList = [];
+		data.data.forEach((product) => {
+			productList.push(product.data);
+		});
 		return {
-			props: {
-				aisle
-			}
+			props: { productList: productList, aisle: aisle}
 		};
 	}
 </script>
 
 <script>
 
-	export let aisle;
-	import productList from '../../products.json';
+	export let aisle, productList;
 	let aisleProducts = [];
-	productList.productList.forEach((product) => {
+	productList.forEach((product) => {
     
 		if (aisle.slice(1) === product.aisle.slice(1)) {
 			aisleProducts.push(product);
