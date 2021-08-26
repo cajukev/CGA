@@ -2,7 +2,6 @@
 	/**
 	 * @type {import('@sveltejs/kit').Load}
 	 */
-	let productList;
 	export async function load({ page, fetch, session, context }) {
 		const productName = page.path.split('/')[2];
 		const res = await fetch('/api/productlist')

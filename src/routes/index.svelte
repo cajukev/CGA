@@ -1,5 +1,4 @@
 <script context="module">
-	let productList;
 	export const load = async ({ fetch }) => {
 		const res = await fetch('/api/productlist')
 			.then((response) => response.json())
