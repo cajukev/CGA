@@ -8,7 +8,7 @@ import { goto } from "$app/navigation";
 	let signUp = async () => {
 		let regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 		if (password.value == password2.value && regex.test(email.value)) {
-			let secret = import.meta.env.VITE_FAUNA_ADMIN;
+			let secret = 'admin';
 			const res = await fetch('/api/newUser', {
 				method: 'POST',
 				body: JSON.stringify({ secret: secret, email: email.value, password: password.value })

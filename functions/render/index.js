@@ -1573,22 +1573,22 @@ var require_conversions = __commonJS({
       const hi = Math.floor(h) % 6;
       const f = h - Math.floor(h);
       const p = 255 * v * (1 - s2);
-      const q2 = 255 * v * (1 - s2 * f);
+      const q = 255 * v * (1 - s2 * f);
       const t = 255 * v * (1 - s2 * (1 - f));
       v *= 255;
       switch (hi) {
         case 0:
           return [v, t, p];
         case 1:
-          return [q2, v, p];
+          return [q, v, p];
         case 2:
           return [p, v, t];
         case 3:
-          return [p, q2, v];
+          return [p, q, v];
         case 4:
           return [t, p, v];
         case 5:
-          return [v, p, q2];
+          return [v, p, q];
       }
     };
     convert.hsv.hsl = function(hsv) {
@@ -9450,9 +9450,9 @@ var require_query = __commonJS({
       ts = util.defaults(ts, null);
       return new Expr(params({ get: wrap(ref) }, { ts: wrap(ts) }));
     }
-    function KeyFromSecret(secret) {
+    function KeyFromSecret(secret2) {
       arity.exact(1, arguments, KeyFromSecret.name);
-      return new Expr({ key_from_secret: wrap(secret) });
+      return new Expr({ key_from_secret: wrap(secret2) });
     }
     function Reduce(lambda, initial, collection) {
       arity.exact(3, arguments, Reduce.name);
@@ -10546,7 +10546,7 @@ var require_PageHelper = __commonJS({
     "use strict";
     var query = require_query();
     var objectAssign = require_object_assign();
-    function PageHelper(client2, set, params, options2) {
+    function PageHelper(client, set, params, options2) {
       if (params === void 0) {
         params = {};
       }
@@ -10568,21 +10568,21 @@ var require_PageHelper = __commonJS({
       }
       this.options = {};
       objectAssign(this.options, options2);
-      this.client = client2;
+      this.client = client;
       this.set = set;
       this._faunaFunctions = [];
     }
     PageHelper.prototype.map = function(lambda) {
       var rv = this._clone();
-      rv._faunaFunctions.push(function(q2) {
-        return query.Map(q2, lambda);
+      rv._faunaFunctions.push(function(q) {
+        return query.Map(q, lambda);
       });
       return rv;
     };
     PageHelper.prototype.filter = function(lambda) {
       var rv = this._clone();
-      rv._faunaFunctions.push(function(q2) {
-        return query.Filter(q2, lambda);
+      rv._faunaFunctions.push(function(q) {
+        return query.Filter(q, lambda);
       });
       return rv;
     };
@@ -10651,13 +10651,13 @@ var require_PageHelper = __commonJS({
           cursorOpts.before = null;
         }
       }
-      var q2 = query.Paginate(this.set, opts);
+      var q = query.Paginate(this.set, opts);
       if (this._faunaFunctions.length > 0) {
         this._faunaFunctions.forEach(function(lambda) {
-          q2 = lambda(q2);
+          q = lambda(q);
         });
       }
-      return this.client.query(q2, this.options);
+      return this.client.query(q, this.options);
     };
     PageHelper.prototype._clone = function() {
       return Object.create(PageHelper.prototype, {
@@ -11696,10 +11696,10 @@ var require_http = __commonJS({
       if (invalidStreamConsumer) {
         return Promise.reject(new TypeError('Invalid "streamConsumer" provided'));
       }
-      var secret = options2.secret || this._secret;
+      var secret2 = options2.secret || this._secret;
       var queryTimeout = options2.queryTimeout || this._queryTimeout;
       var headers = this._headers;
-      headers["Authorization"] = secret && secretHeader(secret);
+      headers["Authorization"] = secret2 && secretHeader(secret2);
       headers["X-Last-Seen-Txn"] = this._lastSeen;
       headers["X-Query-Timeout"] = queryTimeout;
       return this._adapter.execute({
@@ -11714,8 +11714,8 @@ var require_http = __commonJS({
         streamConsumer: options2.streamConsumer
       });
     };
-    function secretHeader(secret) {
-      return "Bearer " + secret;
+    function secretHeader(secret2) {
+      return "Bearer " + secret2;
     }
     function getDefaultHeaders() {
       var driverEnv = {
@@ -11776,24 +11776,24 @@ var require_stream = __commonJS({
     var errors = require_errors();
     var json = require_json();
     var http2 = require_http();
-    var q2 = require_query();
+    var q = require_query();
     var util = require_util2();
     var DefaultEvents = ["start", "error", "version", "history_rewrite"];
     var DocumentStreamEvents = DefaultEvents.concat(["snapshot"]);
-    function StreamClient(client2, expression, options2, onEvent) {
+    function StreamClient(client, expression, options2, onEvent) {
       options2 = util.applyDefaults(options2, {
         fields: null
       });
-      this._client = client2;
+      this._client = client;
       this._onEvent = onEvent;
-      this._query = q2.wrap(expression);
+      this._query = q.wrap(expression);
       this._urlParams = options2.fields ? { fields: options2.fields.join(",") } : null;
       this._abort = new AbortController();
       this._state = "idle";
     }
     StreamClient.prototype.snapshot = function() {
       var self2 = this;
-      self2._client.query(q2.Get(self2._query)).then(function(doc) {
+      self2._client.query(q.Get(self2._query)).then(function(doc) {
         self2._onEvent({
           type: "snapshot",
           event: doc
@@ -11889,8 +11889,8 @@ var require_stream = __commonJS({
         listeners[i].call(null, event.event, event);
       }
     };
-    function Subscription(client2, dispatcher) {
-      this._client = client2;
+    function Subscription(client, dispatcher) {
+      this._client = client;
       this._dispatcher = dispatcher;
     }
     Subscription.prototype.on = function(type, callback) {
@@ -11904,10 +11904,10 @@ var require_stream = __commonJS({
     Subscription.prototype.close = function() {
       this._client.close();
     };
-    function StreamAPI(client2) {
+    function StreamAPI(client) {
       var api = function(expression, options2) {
         var dispatcher = new EventDispatcher(DefaultEvents);
-        var streamClient = new StreamClient(client2, expression, options2, function(event) {
+        var streamClient = new StreamClient(client, expression, options2, function(event) {
           dispatcher.dispatch(event);
         });
         return new Subscription(streamClient, dispatcher);
@@ -11916,7 +11916,7 @@ var require_stream = __commonJS({
         var buffer = [];
         var buffering = true;
         var dispatcher = new EventDispatcher(DocumentStreamEvents);
-        var streamClient = new StreamClient(client2, expression, options2, onEvent);
+        var streamClient = new StreamClient(client, expression, options2, onEvent);
         function onEvent(event) {
           switch (event.type) {
             case "start":
@@ -12073,8 +12073,8 @@ var require_clientLogger = __commonJS({
     "use strict";
     var json = require_json();
     function logger(loggerFunction) {
-      return function(requestResult, client2) {
-        return loggerFunction(showRequestResult(requestResult), client2);
+      return function(requestResult, client) {
+        return loggerFunction(showRequestResult(requestResult), client);
       };
     }
     function showRequestResult(requestResult) {
@@ -12137,6 +12137,2168 @@ var require_faunadb = __commonJS({
       query,
       parseJSON
     }, query);
+  }
+});
+
+// node_modules/svelte/internal/index.js
+var require_internal2 = __commonJS({
+  "node_modules/svelte/internal/index.js"(exports) {
+    init_shims();
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    function noop3() {
+    }
+    var identity = (x) => x;
+    function assign(tar, src2) {
+      for (const k in src2)
+        tar[k] = src2[k];
+      return tar;
+    }
+    function is_promise(value) {
+      return value && typeof value === "object" && typeof value.then === "function";
+    }
+    function add_location(element2, file, line, column, char) {
+      element2.__svelte_meta = {
+        loc: { file, line, column, char }
+      };
+    }
+    function run2(fn) {
+      return fn();
+    }
+    function blank_object2() {
+      return Object.create(null);
+    }
+    function run_all2(fns) {
+      fns.forEach(run2);
+    }
+    function is_function(thing) {
+      return typeof thing === "function";
+    }
+    function safe_not_equal2(a, b) {
+      return a != a ? b == b : a !== b || (a && typeof a === "object" || typeof a === "function");
+    }
+    var src_url_equal_anchor;
+    function src_url_equal(element_src, url) {
+      if (!src_url_equal_anchor) {
+        src_url_equal_anchor = document.createElement("a");
+      }
+      src_url_equal_anchor.href = url;
+      return element_src === src_url_equal_anchor.href;
+    }
+    function not_equal(a, b) {
+      return a != a ? b == b : a !== b;
+    }
+    function is_empty(obj) {
+      return Object.keys(obj).length === 0;
+    }
+    function validate_store(store, name) {
+      if (store != null && typeof store.subscribe !== "function") {
+        throw new Error(`'${name}' is not a store with a 'subscribe' method`);
+      }
+    }
+    function subscribe2(store, ...callbacks) {
+      if (store == null) {
+        return noop3;
+      }
+      const unsub = store.subscribe(...callbacks);
+      return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
+    }
+    function get_store_value(store) {
+      let value;
+      subscribe2(store, (_) => value = _)();
+      return value;
+    }
+    function component_subscribe(component, store, callback) {
+      component.$$.on_destroy.push(subscribe2(store, callback));
+    }
+    function create_slot(definition, ctx, $$scope, fn) {
+      if (definition) {
+        const slot_ctx = get_slot_context(definition, ctx, $$scope, fn);
+        return definition[0](slot_ctx);
+      }
+    }
+    function get_slot_context(definition, ctx, $$scope, fn) {
+      return definition[1] && fn ? assign($$scope.ctx.slice(), definition[1](fn(ctx))) : $$scope.ctx;
+    }
+    function get_slot_changes(definition, $$scope, dirty, fn) {
+      if (definition[2] && fn) {
+        const lets = definition[2](fn(dirty));
+        if ($$scope.dirty === void 0) {
+          return lets;
+        }
+        if (typeof lets === "object") {
+          const merged = [];
+          const len = Math.max($$scope.dirty.length, lets.length);
+          for (let i = 0; i < len; i += 1) {
+            merged[i] = $$scope.dirty[i] | lets[i];
+          }
+          return merged;
+        }
+        return $$scope.dirty | lets;
+      }
+      return $$scope.dirty;
+    }
+    function update_slot(slot, slot_definition, ctx, $$scope, dirty, get_slot_changes_fn, get_slot_context_fn) {
+      const slot_changes = get_slot_changes(slot_definition, $$scope, dirty, get_slot_changes_fn);
+      if (slot_changes) {
+        const slot_context = get_slot_context(slot_definition, ctx, $$scope, get_slot_context_fn);
+        slot.p(slot_context, slot_changes);
+      }
+    }
+    function update_slot_spread(slot, slot_definition, ctx, $$scope, dirty, get_slot_changes_fn, get_slot_spread_changes_fn, get_slot_context_fn) {
+      const slot_changes = get_slot_spread_changes_fn(dirty) | get_slot_changes(slot_definition, $$scope, dirty, get_slot_changes_fn);
+      if (slot_changes) {
+        const slot_context = get_slot_context(slot_definition, ctx, $$scope, get_slot_context_fn);
+        slot.p(slot_context, slot_changes);
+      }
+    }
+    function exclude_internal_props(props) {
+      const result = {};
+      for (const k in props)
+        if (k[0] !== "$")
+          result[k] = props[k];
+      return result;
+    }
+    function compute_rest_props(props, keys) {
+      const rest = {};
+      keys = new Set(keys);
+      for (const k in props)
+        if (!keys.has(k) && k[0] !== "$")
+          rest[k] = props[k];
+      return rest;
+    }
+    function compute_slots(slots) {
+      const result = {};
+      for (const key in slots) {
+        result[key] = true;
+      }
+      return result;
+    }
+    function once(fn) {
+      let ran = false;
+      return function(...args) {
+        if (ran)
+          return;
+        ran = true;
+        fn.call(this, ...args);
+      };
+    }
+    function null_to_empty(value) {
+      return value == null ? "" : value;
+    }
+    function set_store_value(store, ret, value = ret) {
+      store.set(value);
+      return ret;
+    }
+    var has_prop = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop);
+    function action_destroyer(action_result) {
+      return action_result && is_function(action_result.destroy) ? action_result.destroy : noop3;
+    }
+    var is_client = typeof window !== "undefined";
+    exports.now = is_client ? () => window.performance.now() : () => Date.now();
+    exports.raf = is_client ? (cb) => requestAnimationFrame(cb) : noop3;
+    function set_now(fn) {
+      exports.now = fn;
+    }
+    function set_raf(fn) {
+      exports.raf = fn;
+    }
+    var tasks = new Set();
+    function run_tasks(now) {
+      tasks.forEach((task) => {
+        if (!task.c(now)) {
+          tasks.delete(task);
+          task.f();
+        }
+      });
+      if (tasks.size !== 0)
+        exports.raf(run_tasks);
+    }
+    function clear_loops() {
+      tasks.clear();
+    }
+    function loop(callback) {
+      let task;
+      if (tasks.size === 0)
+        exports.raf(run_tasks);
+      return {
+        promise: new Promise((fulfill) => {
+          tasks.add(task = { c: callback, f: fulfill });
+        }),
+        abort() {
+          tasks.delete(task);
+        }
+      };
+    }
+    var is_hydrating = false;
+    function start_hydrating() {
+      is_hydrating = true;
+    }
+    function end_hydrating() {
+      is_hydrating = false;
+    }
+    function upper_bound(low, high, key, value) {
+      while (low < high) {
+        const mid = low + (high - low >> 1);
+        if (key(mid) <= value) {
+          low = mid + 1;
+        } else {
+          high = mid;
+        }
+      }
+      return low;
+    }
+    function init_hydrate(target) {
+      if (target.hydrate_init)
+        return;
+      target.hydrate_init = true;
+      let children2 = target.childNodes;
+      if (target.nodeName === "HEAD") {
+        const myChildren = [];
+        for (let i = 0; i < children2.length; i++) {
+          const node = children2[i];
+          if (node.claim_order !== void 0) {
+            myChildren.push(node);
+          }
+        }
+        children2 = myChildren;
+      }
+      const m = new Int32Array(children2.length + 1);
+      const p = new Int32Array(children2.length);
+      m[0] = -1;
+      let longest = 0;
+      for (let i = 0; i < children2.length; i++) {
+        const current = children2[i].claim_order;
+        const seqLen = (longest > 0 && children2[m[longest]].claim_order <= current ? longest + 1 : upper_bound(1, longest, (idx) => children2[m[idx]].claim_order, current)) - 1;
+        p[i] = m[seqLen] + 1;
+        const newLen = seqLen + 1;
+        m[newLen] = i;
+        longest = Math.max(newLen, longest);
+      }
+      const lis = [];
+      const toMove = [];
+      let last = children2.length - 1;
+      for (let cur = m[longest] + 1; cur != 0; cur = p[cur - 1]) {
+        lis.push(children2[cur - 1]);
+        for (; last >= cur; last--) {
+          toMove.push(children2[last]);
+        }
+        last--;
+      }
+      for (; last >= 0; last--) {
+        toMove.push(children2[last]);
+      }
+      lis.reverse();
+      toMove.sort((a, b) => a.claim_order - b.claim_order);
+      for (let i = 0, j = 0; i < toMove.length; i++) {
+        while (j < lis.length && toMove[i].claim_order >= lis[j].claim_order) {
+          j++;
+        }
+        const anchor = j < lis.length ? lis[j] : null;
+        target.insertBefore(toMove[i], anchor);
+      }
+    }
+    function append(target, node) {
+      target.appendChild(node);
+    }
+    function append_styles(target, style_sheet_id, styles) {
+      var _a;
+      const append_styles_to = get_root_for_styles(target);
+      if (!((_a = append_styles_to) === null || _a === void 0 ? void 0 : _a.getElementById(style_sheet_id))) {
+        const style = element("style");
+        style.id = style_sheet_id;
+        style.textContent = styles;
+        append_stylesheet(append_styles_to, style);
+      }
+    }
+    function get_root_for_node(node) {
+      if (!node)
+        return document;
+      return node.getRootNode ? node.getRootNode() : node.ownerDocument;
+    }
+    function get_root_for_styles(node) {
+      const root = get_root_for_node(node);
+      return root.host ? root : root;
+    }
+    function append_empty_stylesheet(node) {
+      const style_element = element("style");
+      append_stylesheet(get_root_for_styles(node), style_element);
+      return style_element;
+    }
+    function append_stylesheet(node, style) {
+      append(node.head || node, style);
+    }
+    function append_hydration(target, node) {
+      if (is_hydrating) {
+        init_hydrate(target);
+        if (target.actual_end_child === void 0 || target.actual_end_child !== null && target.actual_end_child.parentElement !== target) {
+          target.actual_end_child = target.firstChild;
+        }
+        while (target.actual_end_child !== null && target.actual_end_child.claim_order === void 0) {
+          target.actual_end_child = target.actual_end_child.nextSibling;
+        }
+        if (node !== target.actual_end_child) {
+          if (node.claim_order !== void 0 || node.parentNode !== target) {
+            target.insertBefore(node, target.actual_end_child);
+          }
+        } else {
+          target.actual_end_child = node.nextSibling;
+        }
+      } else if (node.parentNode !== target) {
+        target.appendChild(node);
+      }
+    }
+    function insert(target, node, anchor) {
+      target.insertBefore(node, anchor || null);
+    }
+    function insert_hydration(target, node, anchor) {
+      if (is_hydrating && !anchor) {
+        append_hydration(target, node);
+      } else if (node.parentNode !== target || node.nextSibling != anchor) {
+        target.insertBefore(node, anchor || null);
+      }
+    }
+    function detach(node) {
+      node.parentNode.removeChild(node);
+    }
+    function destroy_each(iterations, detaching) {
+      for (let i = 0; i < iterations.length; i += 1) {
+        if (iterations[i])
+          iterations[i].d(detaching);
+      }
+    }
+    function element(name) {
+      return document.createElement(name);
+    }
+    function element_is(name, is) {
+      return document.createElement(name, { is });
+    }
+    function object_without_properties(obj, exclude) {
+      const target = {};
+      for (const k in obj) {
+        if (has_prop(obj, k) && exclude.indexOf(k) === -1) {
+          target[k] = obj[k];
+        }
+      }
+      return target;
+    }
+    function svg_element(name) {
+      return document.createElementNS("http://www.w3.org/2000/svg", name);
+    }
+    function text(data) {
+      return document.createTextNode(data);
+    }
+    function space() {
+      return text(" ");
+    }
+    function empty2() {
+      return text("");
+    }
+    function listen(node, event, handler2, options2) {
+      node.addEventListener(event, handler2, options2);
+      return () => node.removeEventListener(event, handler2, options2);
+    }
+    function prevent_default(fn) {
+      return function(event) {
+        event.preventDefault();
+        return fn.call(this, event);
+      };
+    }
+    function stop_propagation(fn) {
+      return function(event) {
+        event.stopPropagation();
+        return fn.call(this, event);
+      };
+    }
+    function self2(fn) {
+      return function(event) {
+        if (event.target === this)
+          fn.call(this, event);
+      };
+    }
+    function trusted(fn) {
+      return function(event) {
+        if (event.isTrusted)
+          fn.call(this, event);
+      };
+    }
+    function attr(node, attribute, value) {
+      if (value == null)
+        node.removeAttribute(attribute);
+      else if (node.getAttribute(attribute) !== value)
+        node.setAttribute(attribute, value);
+    }
+    function set_attributes(node, attributes) {
+      const descriptors = Object.getOwnPropertyDescriptors(node.__proto__);
+      for (const key in attributes) {
+        if (attributes[key] == null) {
+          node.removeAttribute(key);
+        } else if (key === "style") {
+          node.style.cssText = attributes[key];
+        } else if (key === "__value") {
+          node.value = node[key] = attributes[key];
+        } else if (descriptors[key] && descriptors[key].set) {
+          node[key] = attributes[key];
+        } else {
+          attr(node, key, attributes[key]);
+        }
+      }
+    }
+    function set_svg_attributes(node, attributes) {
+      for (const key in attributes) {
+        attr(node, key, attributes[key]);
+      }
+    }
+    function set_custom_element_data(node, prop, value) {
+      if (prop in node) {
+        node[prop] = typeof node[prop] === "boolean" && value === "" ? true : value;
+      } else {
+        attr(node, prop, value);
+      }
+    }
+    function xlink_attr(node, attribute, value) {
+      node.setAttributeNS("http://www.w3.org/1999/xlink", attribute, value);
+    }
+    function get_binding_group_value(group, __value, checked) {
+      const value = new Set();
+      for (let i = 0; i < group.length; i += 1) {
+        if (group[i].checked)
+          value.add(group[i].__value);
+      }
+      if (!checked) {
+        value.delete(__value);
+      }
+      return Array.from(value);
+    }
+    function to_number(value) {
+      return value === "" ? null : +value;
+    }
+    function time_ranges_to_array(ranges) {
+      const array = [];
+      for (let i = 0; i < ranges.length; i += 1) {
+        array.push({ start: ranges.start(i), end: ranges.end(i) });
+      }
+      return array;
+    }
+    function children(element2) {
+      return Array.from(element2.childNodes);
+    }
+    function init_claim_info(nodes) {
+      if (nodes.claim_info === void 0) {
+        nodes.claim_info = { last_index: 0, total_claimed: 0 };
+      }
+    }
+    function claim_node(nodes, predicate, processNode, createNode, dontUpdateLastIndex = false) {
+      init_claim_info(nodes);
+      const resultNode = (() => {
+        for (let i = nodes.claim_info.last_index; i < nodes.length; i++) {
+          const node = nodes[i];
+          if (predicate(node)) {
+            const replacement = processNode(node);
+            if (replacement === void 0) {
+              nodes.splice(i, 1);
+            } else {
+              nodes[i] = replacement;
+            }
+            if (!dontUpdateLastIndex) {
+              nodes.claim_info.last_index = i;
+            }
+            return node;
+          }
+        }
+        for (let i = nodes.claim_info.last_index - 1; i >= 0; i--) {
+          const node = nodes[i];
+          if (predicate(node)) {
+            const replacement = processNode(node);
+            if (replacement === void 0) {
+              nodes.splice(i, 1);
+            } else {
+              nodes[i] = replacement;
+            }
+            if (!dontUpdateLastIndex) {
+              nodes.claim_info.last_index = i;
+            } else if (replacement === void 0) {
+              nodes.claim_info.last_index--;
+            }
+            return node;
+          }
+        }
+        return createNode();
+      })();
+      resultNode.claim_order = nodes.claim_info.total_claimed;
+      nodes.claim_info.total_claimed += 1;
+      return resultNode;
+    }
+    function claim_element(nodes, name, attributes, svg) {
+      return claim_node(nodes, (node) => node.nodeName === name, (node) => {
+        const remove = [];
+        for (let j = 0; j < node.attributes.length; j++) {
+          const attribute = node.attributes[j];
+          if (!attributes[attribute.name]) {
+            remove.push(attribute.name);
+          }
+        }
+        remove.forEach((v) => node.removeAttribute(v));
+        return void 0;
+      }, () => svg ? svg_element(name) : element(name));
+    }
+    function claim_text(nodes, data) {
+      return claim_node(nodes, (node) => node.nodeType === 3, (node) => {
+        const dataStr = "" + data;
+        if (node.data.startsWith(dataStr)) {
+          if (node.data.length !== dataStr.length) {
+            return node.splitText(dataStr.length);
+          }
+        } else {
+          node.data = dataStr;
+        }
+      }, () => text(data), true);
+    }
+    function claim_space(nodes) {
+      return claim_text(nodes, " ");
+    }
+    function find_comment(nodes, text2, start) {
+      for (let i = start; i < nodes.length; i += 1) {
+        const node = nodes[i];
+        if (node.nodeType === 8 && node.textContent.trim() === text2) {
+          return i;
+        }
+      }
+      return nodes.length;
+    }
+    function claim_html_tag(nodes) {
+      const start_index = find_comment(nodes, "HTML_TAG_START", 0);
+      const end_index = find_comment(nodes, "HTML_TAG_END", start_index);
+      if (start_index === end_index) {
+        return new HtmlTagHydration();
+      }
+      init_claim_info(nodes);
+      const html_tag_nodes = nodes.splice(start_index, end_index + 1);
+      detach(html_tag_nodes[0]);
+      detach(html_tag_nodes[html_tag_nodes.length - 1]);
+      const claimed_nodes = html_tag_nodes.slice(1, html_tag_nodes.length - 1);
+      for (const n of claimed_nodes) {
+        n.claim_order = nodes.claim_info.total_claimed;
+        nodes.claim_info.total_claimed += 1;
+      }
+      return new HtmlTagHydration(claimed_nodes);
+    }
+    function set_data(text2, data) {
+      data = "" + data;
+      if (text2.wholeText !== data)
+        text2.data = data;
+    }
+    function set_input_value(input, value) {
+      input.value = value == null ? "" : value;
+    }
+    function set_input_type(input, type) {
+      try {
+        input.type = type;
+      } catch (e) {
+      }
+    }
+    function set_style(node, key, value, important) {
+      node.style.setProperty(key, value, important ? "important" : "");
+    }
+    function select_option(select, value) {
+      for (let i = 0; i < select.options.length; i += 1) {
+        const option = select.options[i];
+        if (option.__value === value) {
+          option.selected = true;
+          return;
+        }
+      }
+    }
+    function select_options(select, value) {
+      for (let i = 0; i < select.options.length; i += 1) {
+        const option = select.options[i];
+        option.selected = ~value.indexOf(option.__value);
+      }
+    }
+    function select_value(select) {
+      const selected_option = select.querySelector(":checked") || select.options[0];
+      return selected_option && selected_option.__value;
+    }
+    function select_multiple_value(select) {
+      return [].map.call(select.querySelectorAll(":checked"), (option) => option.__value);
+    }
+    var crossorigin;
+    function is_crossorigin() {
+      if (crossorigin === void 0) {
+        crossorigin = false;
+        try {
+          if (typeof window !== "undefined" && window.parent) {
+            void window.parent.document;
+          }
+        } catch (error3) {
+          crossorigin = true;
+        }
+      }
+      return crossorigin;
+    }
+    function add_resize_listener(node, fn) {
+      const computed_style = getComputedStyle(node);
+      if (computed_style.position === "static") {
+        node.style.position = "relative";
+      }
+      const iframe = element("iframe");
+      iframe.setAttribute("style", "display: block; position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: hidden; border: 0; opacity: 0; pointer-events: none; z-index: -1;");
+      iframe.setAttribute("aria-hidden", "true");
+      iframe.tabIndex = -1;
+      const crossorigin2 = is_crossorigin();
+      let unsubscribe;
+      if (crossorigin2) {
+        iframe.src = "data:text/html,<script>onresize=function(){parent.postMessage(0,'*')}<\/script>";
+        unsubscribe = listen(window, "message", (event) => {
+          if (event.source === iframe.contentWindow)
+            fn();
+        });
+      } else {
+        iframe.src = "about:blank";
+        iframe.onload = () => {
+          unsubscribe = listen(iframe.contentWindow, "resize", fn);
+        };
+      }
+      append(node, iframe);
+      return () => {
+        if (crossorigin2) {
+          unsubscribe();
+        } else if (unsubscribe && iframe.contentWindow) {
+          unsubscribe();
+        }
+        detach(iframe);
+      };
+    }
+    function toggle_class(element2, name, toggle) {
+      element2.classList[toggle ? "add" : "remove"](name);
+    }
+    function custom_event(type, detail, bubbles = false) {
+      const e = document.createEvent("CustomEvent");
+      e.initCustomEvent(type, bubbles, false, detail);
+      return e;
+    }
+    function query_selector_all(selector, parent = document.body) {
+      return Array.from(parent.querySelectorAll(selector));
+    }
+    var HtmlTag = class {
+      constructor() {
+        this.e = this.n = null;
+      }
+      c(html) {
+        this.h(html);
+      }
+      m(html, target, anchor = null) {
+        if (!this.e) {
+          this.e = element(target.nodeName);
+          this.t = target;
+          this.c(html);
+        }
+        this.i(anchor);
+      }
+      h(html) {
+        this.e.innerHTML = html;
+        this.n = Array.from(this.e.childNodes);
+      }
+      i(anchor) {
+        for (let i = 0; i < this.n.length; i += 1) {
+          insert(this.t, this.n[i], anchor);
+        }
+      }
+      p(html) {
+        this.d();
+        this.h(html);
+        this.i(this.a);
+      }
+      d() {
+        this.n.forEach(detach);
+      }
+    };
+    var HtmlTagHydration = class extends HtmlTag {
+      constructor(claimed_nodes) {
+        super();
+        this.e = this.n = null;
+        this.l = claimed_nodes;
+      }
+      c(html) {
+        if (this.l) {
+          this.n = this.l;
+        } else {
+          super.c(html);
+        }
+      }
+      i(anchor) {
+        for (let i = 0; i < this.n.length; i += 1) {
+          insert_hydration(this.t, this.n[i], anchor);
+        }
+      }
+    };
+    function attribute_to_object(attributes) {
+      const result = {};
+      for (const attribute of attributes) {
+        result[attribute.name] = attribute.value;
+      }
+      return result;
+    }
+    function get_custom_elements_slots(element2) {
+      const result = {};
+      element2.childNodes.forEach((node) => {
+        result[node.slot || "default"] = true;
+      });
+      return result;
+    }
+    var active_docs = new Set();
+    var active = 0;
+    function hash2(str) {
+      let hash3 = 5381;
+      let i = str.length;
+      while (i--)
+        hash3 = (hash3 << 5) - hash3 ^ str.charCodeAt(i);
+      return hash3 >>> 0;
+    }
+    function create_rule(node, a, b, duration, delay, ease, fn, uid = 0) {
+      const step = 16.666 / duration;
+      let keyframes = "{\n";
+      for (let p = 0; p <= 1; p += step) {
+        const t = a + (b - a) * ease(p);
+        keyframes += p * 100 + `%{${fn(t, 1 - t)}}
+`;
+      }
+      const rule = keyframes + `100% {${fn(b, 1 - b)}}
+}`;
+      const name = `__svelte_${hash2(rule)}_${uid}`;
+      const doc = get_root_for_node(node);
+      active_docs.add(doc);
+      const stylesheet = doc.__svelte_stylesheet || (doc.__svelte_stylesheet = append_empty_stylesheet(node).sheet);
+      const current_rules = doc.__svelte_rules || (doc.__svelte_rules = {});
+      if (!current_rules[name]) {
+        current_rules[name] = true;
+        stylesheet.insertRule(`@keyframes ${name} ${rule}`, stylesheet.cssRules.length);
+      }
+      const animation = node.style.animation || "";
+      node.style.animation = `${animation ? `${animation}, ` : ""}${name} ${duration}ms linear ${delay}ms 1 both`;
+      active += 1;
+      return name;
+    }
+    function delete_rule(node, name) {
+      const previous = (node.style.animation || "").split(", ");
+      const next = previous.filter(name ? (anim) => anim.indexOf(name) < 0 : (anim) => anim.indexOf("__svelte") === -1);
+      const deleted = previous.length - next.length;
+      if (deleted) {
+        node.style.animation = next.join(", ");
+        active -= deleted;
+        if (!active)
+          clear_rules();
+      }
+    }
+    function clear_rules() {
+      exports.raf(() => {
+        if (active)
+          return;
+        active_docs.forEach((doc) => {
+          const stylesheet = doc.__svelte_stylesheet;
+          let i = stylesheet.cssRules.length;
+          while (i--)
+            stylesheet.deleteRule(i);
+          doc.__svelte_rules = {};
+        });
+        active_docs.clear();
+      });
+    }
+    function create_animation(node, from, fn, params) {
+      if (!from)
+        return noop3;
+      const to = node.getBoundingClientRect();
+      if (from.left === to.left && from.right === to.right && from.top === to.top && from.bottom === to.bottom)
+        return noop3;
+      const {
+        delay = 0,
+        duration = 300,
+        easing = identity,
+        start: start_time = exports.now() + delay,
+        end = start_time + duration,
+        tick: tick2 = noop3,
+        css: css2
+      } = fn(node, { from, to }, params);
+      let running = true;
+      let started = false;
+      let name;
+      function start() {
+        if (css2) {
+          name = create_rule(node, 0, 1, duration, delay, easing, css2);
+        }
+        if (!delay) {
+          started = true;
+        }
+      }
+      function stop() {
+        if (css2)
+          delete_rule(node, name);
+        running = false;
+      }
+      loop((now) => {
+        if (!started && now >= start_time) {
+          started = true;
+        }
+        if (started && now >= end) {
+          tick2(1, 0);
+          stop();
+        }
+        if (!running) {
+          return false;
+        }
+        if (started) {
+          const p = now - start_time;
+          const t = 0 + 1 * easing(p / duration);
+          tick2(t, 1 - t);
+        }
+        return true;
+      });
+      start();
+      tick2(0, 1);
+      return stop;
+    }
+    function fix_position(node) {
+      const style = getComputedStyle(node);
+      if (style.position !== "absolute" && style.position !== "fixed") {
+        const { width, height } = style;
+        const a = node.getBoundingClientRect();
+        node.style.position = "absolute";
+        node.style.width = width;
+        node.style.height = height;
+        add_transform(node, a);
+      }
+    }
+    function add_transform(node, a) {
+      const b = node.getBoundingClientRect();
+      if (a.left !== b.left || a.top !== b.top) {
+        const style = getComputedStyle(node);
+        const transform = style.transform === "none" ? "" : style.transform;
+        node.style.transform = `${transform} translate(${a.left - b.left}px, ${a.top - b.top}px)`;
+      }
+    }
+    function set_current_component2(component) {
+      exports.current_component = component;
+    }
+    function get_current_component2() {
+      if (!exports.current_component)
+        throw new Error("Function called outside component initialization");
+      return exports.current_component;
+    }
+    function beforeUpdate(fn) {
+      get_current_component2().$$.before_update.push(fn);
+    }
+    function onMount(fn) {
+      get_current_component2().$$.on_mount.push(fn);
+    }
+    function afterUpdate2(fn) {
+      get_current_component2().$$.after_update.push(fn);
+    }
+    function onDestroy(fn) {
+      get_current_component2().$$.on_destroy.push(fn);
+    }
+    function createEventDispatcher() {
+      const component = get_current_component2();
+      return (type, detail) => {
+        const callbacks = component.$$.callbacks[type];
+        if (callbacks) {
+          const event = custom_event(type, detail);
+          callbacks.slice().forEach((fn) => {
+            fn.call(component, event);
+          });
+        }
+      };
+    }
+    function setContext2(key, context) {
+      get_current_component2().$$.context.set(key, context);
+    }
+    function getContext(key) {
+      return get_current_component2().$$.context.get(key);
+    }
+    function getAllContexts() {
+      return get_current_component2().$$.context;
+    }
+    function hasContext(key) {
+      return get_current_component2().$$.context.has(key);
+    }
+    function bubble(component, event) {
+      const callbacks = component.$$.callbacks[event.type];
+      if (callbacks) {
+        callbacks.slice().forEach((fn) => fn.call(this, event));
+      }
+    }
+    var dirty_components = [];
+    var intros = { enabled: false };
+    var binding_callbacks = [];
+    var render_callbacks = [];
+    var flush_callbacks = [];
+    var resolved_promise = Promise.resolve();
+    var update_scheduled = false;
+    function schedule_update() {
+      if (!update_scheduled) {
+        update_scheduled = true;
+        resolved_promise.then(flush);
+      }
+    }
+    function tick() {
+      schedule_update();
+      return resolved_promise;
+    }
+    function add_render_callback(fn) {
+      render_callbacks.push(fn);
+    }
+    function add_flush_callback(fn) {
+      flush_callbacks.push(fn);
+    }
+    var flushing = false;
+    var seen_callbacks = new Set();
+    function flush() {
+      if (flushing)
+        return;
+      flushing = true;
+      do {
+        for (let i = 0; i < dirty_components.length; i += 1) {
+          const component = dirty_components[i];
+          set_current_component2(component);
+          update(component.$$);
+        }
+        set_current_component2(null);
+        dirty_components.length = 0;
+        while (binding_callbacks.length)
+          binding_callbacks.pop()();
+        for (let i = 0; i < render_callbacks.length; i += 1) {
+          const callback = render_callbacks[i];
+          if (!seen_callbacks.has(callback)) {
+            seen_callbacks.add(callback);
+            callback();
+          }
+        }
+        render_callbacks.length = 0;
+      } while (dirty_components.length);
+      while (flush_callbacks.length) {
+        flush_callbacks.pop()();
+      }
+      update_scheduled = false;
+      flushing = false;
+      seen_callbacks.clear();
+    }
+    function update($$) {
+      if ($$.fragment !== null) {
+        $$.update();
+        run_all2($$.before_update);
+        const dirty = $$.dirty;
+        $$.dirty = [-1];
+        $$.fragment && $$.fragment.p($$.ctx, dirty);
+        $$.after_update.forEach(add_render_callback);
+      }
+    }
+    var promise;
+    function wait() {
+      if (!promise) {
+        promise = Promise.resolve();
+        promise.then(() => {
+          promise = null;
+        });
+      }
+      return promise;
+    }
+    function dispatch(node, direction, kind) {
+      node.dispatchEvent(custom_event(`${direction ? "intro" : "outro"}${kind}`));
+    }
+    var outroing = new Set();
+    var outros;
+    function group_outros() {
+      outros = {
+        r: 0,
+        c: [],
+        p: outros
+      };
+    }
+    function check_outros() {
+      if (!outros.r) {
+        run_all2(outros.c);
+      }
+      outros = outros.p;
+    }
+    function transition_in(block, local) {
+      if (block && block.i) {
+        outroing.delete(block);
+        block.i(local);
+      }
+    }
+    function transition_out(block, local, detach2, callback) {
+      if (block && block.o) {
+        if (outroing.has(block))
+          return;
+        outroing.add(block);
+        outros.c.push(() => {
+          outroing.delete(block);
+          if (callback) {
+            if (detach2)
+              block.d(1);
+            callback();
+          }
+        });
+        block.o(local);
+      }
+    }
+    var null_transition = { duration: 0 };
+    function create_in_transition(node, fn, params) {
+      let config = fn(node, params);
+      let running = false;
+      let animation_name;
+      let task;
+      let uid = 0;
+      function cleanup() {
+        if (animation_name)
+          delete_rule(node, animation_name);
+      }
+      function go() {
+        const { delay = 0, duration = 300, easing = identity, tick: tick2 = noop3, css: css2 } = config || null_transition;
+        if (css2)
+          animation_name = create_rule(node, 0, 1, duration, delay, easing, css2, uid++);
+        tick2(0, 1);
+        const start_time = exports.now() + delay;
+        const end_time = start_time + duration;
+        if (task)
+          task.abort();
+        running = true;
+        add_render_callback(() => dispatch(node, true, "start"));
+        task = loop((now) => {
+          if (running) {
+            if (now >= end_time) {
+              tick2(1, 0);
+              dispatch(node, true, "end");
+              cleanup();
+              return running = false;
+            }
+            if (now >= start_time) {
+              const t = easing((now - start_time) / duration);
+              tick2(t, 1 - t);
+            }
+          }
+          return running;
+        });
+      }
+      let started = false;
+      return {
+        start() {
+          if (started)
+            return;
+          delete_rule(node);
+          if (is_function(config)) {
+            config = config();
+            wait().then(go);
+          } else {
+            go();
+          }
+        },
+        invalidate() {
+          started = false;
+        },
+        end() {
+          if (running) {
+            cleanup();
+            running = false;
+          }
+        }
+      };
+    }
+    function create_out_transition(node, fn, params) {
+      let config = fn(node, params);
+      let running = true;
+      let animation_name;
+      const group = outros;
+      group.r += 1;
+      function go() {
+        const { delay = 0, duration = 300, easing = identity, tick: tick2 = noop3, css: css2 } = config || null_transition;
+        if (css2)
+          animation_name = create_rule(node, 1, 0, duration, delay, easing, css2);
+        const start_time = exports.now() + delay;
+        const end_time = start_time + duration;
+        add_render_callback(() => dispatch(node, false, "start"));
+        loop((now) => {
+          if (running) {
+            if (now >= end_time) {
+              tick2(0, 1);
+              dispatch(node, false, "end");
+              if (!--group.r) {
+                run_all2(group.c);
+              }
+              return false;
+            }
+            if (now >= start_time) {
+              const t = easing((now - start_time) / duration);
+              tick2(1 - t, t);
+            }
+          }
+          return running;
+        });
+      }
+      if (is_function(config)) {
+        wait().then(() => {
+          config = config();
+          go();
+        });
+      } else {
+        go();
+      }
+      return {
+        end(reset) {
+          if (reset && config.tick) {
+            config.tick(1, 0);
+          }
+          if (running) {
+            if (animation_name)
+              delete_rule(node, animation_name);
+            running = false;
+          }
+        }
+      };
+    }
+    function create_bidirectional_transition(node, fn, params, intro) {
+      let config = fn(node, params);
+      let t = intro ? 0 : 1;
+      let running_program = null;
+      let pending_program = null;
+      let animation_name = null;
+      function clear_animation() {
+        if (animation_name)
+          delete_rule(node, animation_name);
+      }
+      function init3(program, duration) {
+        const d2 = program.b - t;
+        duration *= Math.abs(d2);
+        return {
+          a: t,
+          b: program.b,
+          d: d2,
+          duration,
+          start: program.start,
+          end: program.start + duration,
+          group: program.group
+        };
+      }
+      function go(b) {
+        const { delay = 0, duration = 300, easing = identity, tick: tick2 = noop3, css: css2 } = config || null_transition;
+        const program = {
+          start: exports.now() + delay,
+          b
+        };
+        if (!b) {
+          program.group = outros;
+          outros.r += 1;
+        }
+        if (running_program || pending_program) {
+          pending_program = program;
+        } else {
+          if (css2) {
+            clear_animation();
+            animation_name = create_rule(node, t, b, duration, delay, easing, css2);
+          }
+          if (b)
+            tick2(0, 1);
+          running_program = init3(program, duration);
+          add_render_callback(() => dispatch(node, b, "start"));
+          loop((now) => {
+            if (pending_program && now > pending_program.start) {
+              running_program = init3(pending_program, duration);
+              pending_program = null;
+              dispatch(node, running_program.b, "start");
+              if (css2) {
+                clear_animation();
+                animation_name = create_rule(node, t, running_program.b, running_program.duration, 0, easing, config.css);
+              }
+            }
+            if (running_program) {
+              if (now >= running_program.end) {
+                tick2(t = running_program.b, 1 - t);
+                dispatch(node, running_program.b, "end");
+                if (!pending_program) {
+                  if (running_program.b) {
+                    clear_animation();
+                  } else {
+                    if (!--running_program.group.r)
+                      run_all2(running_program.group.c);
+                  }
+                }
+                running_program = null;
+              } else if (now >= running_program.start) {
+                const p = now - running_program.start;
+                t = running_program.a + running_program.d * easing(p / running_program.duration);
+                tick2(t, 1 - t);
+              }
+            }
+            return !!(running_program || pending_program);
+          });
+        }
+      }
+      return {
+        run(b) {
+          if (is_function(config)) {
+            wait().then(() => {
+              config = config();
+              go(b);
+            });
+          } else {
+            go(b);
+          }
+        },
+        end() {
+          clear_animation();
+          running_program = pending_program = null;
+        }
+      };
+    }
+    function handle_promise(promise2, info) {
+      const token = info.token = {};
+      function update2(type, index2, key, value) {
+        if (info.token !== token)
+          return;
+        info.resolved = value;
+        let child_ctx = info.ctx;
+        if (key !== void 0) {
+          child_ctx = child_ctx.slice();
+          child_ctx[key] = value;
+        }
+        const block = type && (info.current = type)(child_ctx);
+        let needs_flush = false;
+        if (info.block) {
+          if (info.blocks) {
+            info.blocks.forEach((block2, i) => {
+              if (i !== index2 && block2) {
+                group_outros();
+                transition_out(block2, 1, 1, () => {
+                  if (info.blocks[i] === block2) {
+                    info.blocks[i] = null;
+                  }
+                });
+                check_outros();
+              }
+            });
+          } else {
+            info.block.d(1);
+          }
+          block.c();
+          transition_in(block, 1);
+          block.m(info.mount(), info.anchor);
+          needs_flush = true;
+        }
+        info.block = block;
+        if (info.blocks)
+          info.blocks[index2] = block;
+        if (needs_flush) {
+          flush();
+        }
+      }
+      if (is_promise(promise2)) {
+        const current_component2 = get_current_component2();
+        promise2.then((value) => {
+          set_current_component2(current_component2);
+          update2(info.then, 1, info.value, value);
+          set_current_component2(null);
+        }, (error3) => {
+          set_current_component2(current_component2);
+          update2(info.catch, 2, info.error, error3);
+          set_current_component2(null);
+          if (!info.hasCatch) {
+            throw error3;
+          }
+        });
+        if (info.current !== info.pending) {
+          update2(info.pending, 0);
+          return true;
+        }
+      } else {
+        if (info.current !== info.then) {
+          update2(info.then, 1, info.value, promise2);
+          return true;
+        }
+        info.resolved = promise2;
+      }
+    }
+    function update_await_block_branch(info, ctx, dirty) {
+      const child_ctx = ctx.slice();
+      const { resolved } = info;
+      if (info.current === info.then) {
+        child_ctx[info.value] = resolved;
+      }
+      if (info.current === info.catch) {
+        child_ctx[info.error] = resolved;
+      }
+      info.block.p(child_ctx, dirty);
+    }
+    var globals = typeof window !== "undefined" ? window : typeof globalThis !== "undefined" ? globalThis : global;
+    function destroy_block(block, lookup) {
+      block.d(1);
+      lookup.delete(block.key);
+    }
+    function outro_and_destroy_block(block, lookup) {
+      transition_out(block, 1, 1, () => {
+        lookup.delete(block.key);
+      });
+    }
+    function fix_and_destroy_block(block, lookup) {
+      block.f();
+      destroy_block(block, lookup);
+    }
+    function fix_and_outro_and_destroy_block(block, lookup) {
+      block.f();
+      outro_and_destroy_block(block, lookup);
+    }
+    function update_keyed_each(old_blocks, dirty, get_key, dynamic, ctx, list, lookup, node, destroy, create_each_block, next, get_context) {
+      let o = old_blocks.length;
+      let n = list.length;
+      let i = o;
+      const old_indexes = {};
+      while (i--)
+        old_indexes[old_blocks[i].key] = i;
+      const new_blocks = [];
+      const new_lookup = new Map();
+      const deltas = new Map();
+      i = n;
+      while (i--) {
+        const child_ctx = get_context(ctx, list, i);
+        const key = get_key(child_ctx);
+        let block = lookup.get(key);
+        if (!block) {
+          block = create_each_block(key, child_ctx);
+          block.c();
+        } else if (dynamic) {
+          block.p(child_ctx, dirty);
+        }
+        new_lookup.set(key, new_blocks[i] = block);
+        if (key in old_indexes)
+          deltas.set(key, Math.abs(i - old_indexes[key]));
+      }
+      const will_move = new Set();
+      const did_move = new Set();
+      function insert2(block) {
+        transition_in(block, 1);
+        block.m(node, next);
+        lookup.set(block.key, block);
+        next = block.first;
+        n--;
+      }
+      while (o && n) {
+        const new_block = new_blocks[n - 1];
+        const old_block = old_blocks[o - 1];
+        const new_key = new_block.key;
+        const old_key = old_block.key;
+        if (new_block === old_block) {
+          next = new_block.first;
+          o--;
+          n--;
+        } else if (!new_lookup.has(old_key)) {
+          destroy(old_block, lookup);
+          o--;
+        } else if (!lookup.has(new_key) || will_move.has(new_key)) {
+          insert2(new_block);
+        } else if (did_move.has(old_key)) {
+          o--;
+        } else if (deltas.get(new_key) > deltas.get(old_key)) {
+          did_move.add(new_key);
+          insert2(new_block);
+        } else {
+          will_move.add(old_key);
+          o--;
+        }
+      }
+      while (o--) {
+        const old_block = old_blocks[o];
+        if (!new_lookup.has(old_block.key))
+          destroy(old_block, lookup);
+      }
+      while (n)
+        insert2(new_blocks[n - 1]);
+      return new_blocks;
+    }
+    function validate_each_keys(ctx, list, get_context, get_key) {
+      const keys = new Set();
+      for (let i = 0; i < list.length; i++) {
+        const key = get_key(get_context(ctx, list, i));
+        if (keys.has(key)) {
+          throw new Error("Cannot have duplicate keys in a keyed each");
+        }
+        keys.add(key);
+      }
+    }
+    function get_spread_update(levels, updates) {
+      const update2 = {};
+      const to_null_out = {};
+      const accounted_for = { $$scope: 1 };
+      let i = levels.length;
+      while (i--) {
+        const o = levels[i];
+        const n = updates[i];
+        if (n) {
+          for (const key in o) {
+            if (!(key in n))
+              to_null_out[key] = 1;
+          }
+          for (const key in n) {
+            if (!accounted_for[key]) {
+              update2[key] = n[key];
+              accounted_for[key] = 1;
+            }
+          }
+          levels[i] = n;
+        } else {
+          for (const key in o) {
+            accounted_for[key] = 1;
+          }
+        }
+      }
+      for (const key in to_null_out) {
+        if (!(key in update2))
+          update2[key] = void 0;
+      }
+      return update2;
+    }
+    function get_spread_object(spread_props) {
+      return typeof spread_props === "object" && spread_props !== null ? spread_props : {};
+    }
+    var boolean_attributes = new Set([
+      "allowfullscreen",
+      "allowpaymentrequest",
+      "async",
+      "autofocus",
+      "autoplay",
+      "checked",
+      "controls",
+      "default",
+      "defer",
+      "disabled",
+      "formnovalidate",
+      "hidden",
+      "ismap",
+      "loop",
+      "multiple",
+      "muted",
+      "nomodule",
+      "novalidate",
+      "open",
+      "playsinline",
+      "readonly",
+      "required",
+      "reversed",
+      "selected"
+    ]);
+    var invalid_attribute_name_character = /[\s'">/=\u{FDD0}-\u{FDEF}\u{FFFE}\u{FFFF}\u{1FFFE}\u{1FFFF}\u{2FFFE}\u{2FFFF}\u{3FFFE}\u{3FFFF}\u{4FFFE}\u{4FFFF}\u{5FFFE}\u{5FFFF}\u{6FFFE}\u{6FFFF}\u{7FFFE}\u{7FFFF}\u{8FFFE}\u{8FFFF}\u{9FFFE}\u{9FFFF}\u{AFFFE}\u{AFFFF}\u{BFFFE}\u{BFFFF}\u{CFFFE}\u{CFFFF}\u{DFFFE}\u{DFFFF}\u{EFFFE}\u{EFFFF}\u{FFFFE}\u{FFFFF}\u{10FFFE}\u{10FFFF}]/u;
+    function spread(args, classes_to_add) {
+      const attributes = Object.assign({}, ...args);
+      if (classes_to_add) {
+        if (attributes.class == null) {
+          attributes.class = classes_to_add;
+        } else {
+          attributes.class += " " + classes_to_add;
+        }
+      }
+      let str = "";
+      Object.keys(attributes).forEach((name) => {
+        if (invalid_attribute_name_character.test(name))
+          return;
+        const value = attributes[name];
+        if (value === true)
+          str += " " + name;
+        else if (boolean_attributes.has(name.toLowerCase())) {
+          if (value)
+            str += " " + name;
+        } else if (value != null) {
+          str += ` ${name}="${value}"`;
+        }
+      });
+      return str;
+    }
+    var escaped3 = {
+      '"': "&quot;",
+      "'": "&#39;",
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;"
+    };
+    function escape3(html) {
+      return String(html).replace(/["'&<>]/g, (match) => escaped3[match]);
+    }
+    function escape_attribute_value(value) {
+      return typeof value === "string" ? escape3(value) : value;
+    }
+    function escape_object(obj) {
+      const result = {};
+      for (const key in obj) {
+        result[key] = escape_attribute_value(obj[key]);
+      }
+      return result;
+    }
+    function each2(items, fn) {
+      let str = "";
+      for (let i = 0; i < items.length; i += 1) {
+        str += fn(items[i], i);
+      }
+      return str;
+    }
+    var missing_component2 = {
+      $$render: () => ""
+    };
+    function validate_component2(component, name) {
+      if (!component || !component.$$render) {
+        if (name === "svelte:component")
+          name += " this={...}";
+        throw new Error(`<${name}> is not a valid SSR component. You may need to review your build config to ensure that dependencies are compiled, rather than imported as pre-compiled modules`);
+      }
+      return component;
+    }
+    function debug(file, line, column, values) {
+      console.log(`{@debug} ${file ? file + " " : ""}(${line}:${column})`);
+      console.log(values);
+      return "";
+    }
+    var on_destroy2;
+    function create_ssr_component2(fn) {
+      function $$render(result, props, bindings, slots, context) {
+        const parent_component = exports.current_component;
+        const $$ = {
+          on_destroy: on_destroy2,
+          context: new Map(parent_component ? parent_component.$$.context : context || []),
+          on_mount: [],
+          before_update: [],
+          after_update: [],
+          callbacks: blank_object2()
+        };
+        set_current_component2({ $$ });
+        const html = fn(result, props, bindings, slots);
+        set_current_component2(parent_component);
+        return html;
+      }
+      return {
+        render: (props = {}, { $$slots = {}, context = new Map() } = {}) => {
+          on_destroy2 = [];
+          const result = { title: "", head: "", css: new Set() };
+          const html = $$render(result, props, {}, $$slots, context);
+          run_all2(on_destroy2);
+          return {
+            html,
+            css: {
+              code: Array.from(result.css).map((css2) => css2.code).join("\n"),
+              map: null
+            },
+            head: result.title + result.head
+          };
+        },
+        $$render
+      };
+    }
+    function add_attribute2(name, value, boolean) {
+      if (value == null || boolean && !value)
+        return "";
+      return ` ${name}${value === true ? "" : `=${typeof value === "string" ? JSON.stringify(escape3(value)) : `"${value}"`}`}`;
+    }
+    function add_classes(classes) {
+      return classes ? ` class="${classes}"` : "";
+    }
+    function bind(component, name, callback) {
+      const index2 = component.$$.props[name];
+      if (index2 !== void 0) {
+        component.$$.bound[index2] = callback;
+        callback(component.$$.ctx[index2]);
+      }
+    }
+    function create_component(block) {
+      block && block.c();
+    }
+    function claim_component(block, parent_nodes) {
+      block && block.l(parent_nodes);
+    }
+    function mount_component(component, target, anchor, customElement) {
+      const { fragment, on_mount, on_destroy: on_destroy3, after_update } = component.$$;
+      fragment && fragment.m(target, anchor);
+      if (!customElement) {
+        add_render_callback(() => {
+          const new_on_destroy = on_mount.map(run2).filter(is_function);
+          if (on_destroy3) {
+            on_destroy3.push(...new_on_destroy);
+          } else {
+            run_all2(new_on_destroy);
+          }
+          component.$$.on_mount = [];
+        });
+      }
+      after_update.forEach(add_render_callback);
+    }
+    function destroy_component(component, detaching) {
+      const $$ = component.$$;
+      if ($$.fragment !== null) {
+        run_all2($$.on_destroy);
+        $$.fragment && $$.fragment.d(detaching);
+        $$.on_destroy = $$.fragment = null;
+        $$.ctx = [];
+      }
+    }
+    function make_dirty(component, i) {
+      if (component.$$.dirty[0] === -1) {
+        dirty_components.push(component);
+        schedule_update();
+        component.$$.dirty.fill(0);
+      }
+      component.$$.dirty[i / 31 | 0] |= 1 << i % 31;
+    }
+    function init2(component, options2, instance, create_fragment, not_equal2, props, append_styles2, dirty = [-1]) {
+      const parent_component = exports.current_component;
+      set_current_component2(component);
+      const $$ = component.$$ = {
+        fragment: null,
+        ctx: null,
+        props,
+        update: noop3,
+        not_equal: not_equal2,
+        bound: blank_object2(),
+        on_mount: [],
+        on_destroy: [],
+        on_disconnect: [],
+        before_update: [],
+        after_update: [],
+        context: new Map(parent_component ? parent_component.$$.context : options2.context || []),
+        callbacks: blank_object2(),
+        dirty,
+        skip_bound: false,
+        root: options2.target || parent_component.$$.root
+      };
+      append_styles2 && append_styles2($$.root);
+      let ready = false;
+      $$.ctx = instance ? instance(component, options2.props || {}, (i, ret, ...rest) => {
+        const value = rest.length ? rest[0] : ret;
+        if ($$.ctx && not_equal2($$.ctx[i], $$.ctx[i] = value)) {
+          if (!$$.skip_bound && $$.bound[i])
+            $$.bound[i](value);
+          if (ready)
+            make_dirty(component, i);
+        }
+        return ret;
+      }) : [];
+      $$.update();
+      ready = true;
+      run_all2($$.before_update);
+      $$.fragment = create_fragment ? create_fragment($$.ctx) : false;
+      if (options2.target) {
+        if (options2.hydrate) {
+          start_hydrating();
+          const nodes = children(options2.target);
+          $$.fragment && $$.fragment.l(nodes);
+          nodes.forEach(detach);
+        } else {
+          $$.fragment && $$.fragment.c();
+        }
+        if (options2.intro)
+          transition_in(component.$$.fragment);
+        mount_component(component, options2.target, options2.anchor, options2.customElement);
+        end_hydrating();
+        flush();
+      }
+      set_current_component2(parent_component);
+    }
+    if (typeof HTMLElement === "function") {
+      exports.SvelteElement = class extends HTMLElement {
+        constructor() {
+          super();
+          this.attachShadow({ mode: "open" });
+        }
+        connectedCallback() {
+          const { on_mount } = this.$$;
+          this.$$.on_disconnect = on_mount.map(run2).filter(is_function);
+          for (const key in this.$$.slotted) {
+            this.appendChild(this.$$.slotted[key]);
+          }
+        }
+        attributeChangedCallback(attr2, _oldValue, newValue) {
+          this[attr2] = newValue;
+        }
+        disconnectedCallback() {
+          run_all2(this.$$.on_disconnect);
+        }
+        $destroy() {
+          destroy_component(this, 1);
+          this.$destroy = noop3;
+        }
+        $on(type, callback) {
+          const callbacks = this.$$.callbacks[type] || (this.$$.callbacks[type] = []);
+          callbacks.push(callback);
+          return () => {
+            const index2 = callbacks.indexOf(callback);
+            if (index2 !== -1)
+              callbacks.splice(index2, 1);
+          };
+        }
+        $set($$props) {
+          if (this.$$set && !is_empty($$props)) {
+            this.$$.skip_bound = true;
+            this.$$set($$props);
+            this.$$.skip_bound = false;
+          }
+        }
+      };
+    }
+    var SvelteComponent = class {
+      $destroy() {
+        destroy_component(this, 1);
+        this.$destroy = noop3;
+      }
+      $on(type, callback) {
+        const callbacks = this.$$.callbacks[type] || (this.$$.callbacks[type] = []);
+        callbacks.push(callback);
+        return () => {
+          const index2 = callbacks.indexOf(callback);
+          if (index2 !== -1)
+            callbacks.splice(index2, 1);
+        };
+      }
+      $set($$props) {
+        if (this.$$set && !is_empty($$props)) {
+          this.$$.skip_bound = true;
+          this.$$set($$props);
+          this.$$.skip_bound = false;
+        }
+      }
+    };
+    function dispatch_dev(type, detail) {
+      document.dispatchEvent(custom_event(type, Object.assign({ version: "3.40.1" }, detail), true));
+    }
+    function append_dev(target, node) {
+      dispatch_dev("SvelteDOMInsert", { target, node });
+      append(target, node);
+    }
+    function append_hydration_dev(target, node) {
+      dispatch_dev("SvelteDOMInsert", { target, node });
+      append_hydration(target, node);
+    }
+    function insert_dev(target, node, anchor) {
+      dispatch_dev("SvelteDOMInsert", { target, node, anchor });
+      insert(target, node, anchor);
+    }
+    function insert_hydration_dev(target, node, anchor) {
+      dispatch_dev("SvelteDOMInsert", { target, node, anchor });
+      insert_hydration(target, node, anchor);
+    }
+    function detach_dev(node) {
+      dispatch_dev("SvelteDOMRemove", { node });
+      detach(node);
+    }
+    function detach_between_dev(before, after) {
+      while (before.nextSibling && before.nextSibling !== after) {
+        detach_dev(before.nextSibling);
+      }
+    }
+    function detach_before_dev(after) {
+      while (after.previousSibling) {
+        detach_dev(after.previousSibling);
+      }
+    }
+    function detach_after_dev(before) {
+      while (before.nextSibling) {
+        detach_dev(before.nextSibling);
+      }
+    }
+    function listen_dev(node, event, handler2, options2, has_prevent_default, has_stop_propagation) {
+      const modifiers = options2 === true ? ["capture"] : options2 ? Array.from(Object.keys(options2)) : [];
+      if (has_prevent_default)
+        modifiers.push("preventDefault");
+      if (has_stop_propagation)
+        modifiers.push("stopPropagation");
+      dispatch_dev("SvelteDOMAddEventListener", { node, event, handler: handler2, modifiers });
+      const dispose = listen(node, event, handler2, options2);
+      return () => {
+        dispatch_dev("SvelteDOMRemoveEventListener", { node, event, handler: handler2, modifiers });
+        dispose();
+      };
+    }
+    function attr_dev(node, attribute, value) {
+      attr(node, attribute, value);
+      if (value == null)
+        dispatch_dev("SvelteDOMRemoveAttribute", { node, attribute });
+      else
+        dispatch_dev("SvelteDOMSetAttribute", { node, attribute, value });
+    }
+    function prop_dev(node, property, value) {
+      node[property] = value;
+      dispatch_dev("SvelteDOMSetProperty", { node, property, value });
+    }
+    function dataset_dev(node, property, value) {
+      node.dataset[property] = value;
+      dispatch_dev("SvelteDOMSetDataset", { node, property, value });
+    }
+    function set_data_dev(text2, data) {
+      data = "" + data;
+      if (text2.wholeText === data)
+        return;
+      dispatch_dev("SvelteDOMSetData", { node: text2, data });
+      text2.data = data;
+    }
+    function validate_each_argument(arg) {
+      if (typeof arg !== "string" && !(arg && typeof arg === "object" && "length" in arg)) {
+        let msg = "{#each} only iterates over array-like objects.";
+        if (typeof Symbol === "function" && arg && Symbol.iterator in arg) {
+          msg += " You can use a spread to convert this iterable into an array.";
+        }
+        throw new Error(msg);
+      }
+    }
+    function validate_slots(name, slot, keys) {
+      for (const slot_key of Object.keys(slot)) {
+        if (!~keys.indexOf(slot_key)) {
+          console.warn(`<${name}> received an unexpected slot "${slot_key}".`);
+        }
+      }
+    }
+    var SvelteComponentDev = class extends SvelteComponent {
+      constructor(options2) {
+        if (!options2 || !options2.target && !options2.$$inline) {
+          throw new Error("'target' is a required option");
+        }
+        super();
+      }
+      $destroy() {
+        super.$destroy();
+        this.$destroy = () => {
+          console.warn("Component was already destroyed");
+        };
+      }
+      $capture_state() {
+      }
+      $inject_state() {
+      }
+    };
+    var SvelteComponentTyped = class extends SvelteComponentDev {
+      constructor(options2) {
+        super(options2);
+      }
+    };
+    function loop_guard(timeout) {
+      const start = Date.now();
+      return () => {
+        if (Date.now() - start > timeout) {
+          throw new Error("Infinite loop detected");
+        }
+      };
+    }
+    exports.HtmlTag = HtmlTag;
+    exports.HtmlTagHydration = HtmlTagHydration;
+    exports.SvelteComponent = SvelteComponent;
+    exports.SvelteComponentDev = SvelteComponentDev;
+    exports.SvelteComponentTyped = SvelteComponentTyped;
+    exports.action_destroyer = action_destroyer;
+    exports.add_attribute = add_attribute2;
+    exports.add_classes = add_classes;
+    exports.add_flush_callback = add_flush_callback;
+    exports.add_location = add_location;
+    exports.add_render_callback = add_render_callback;
+    exports.add_resize_listener = add_resize_listener;
+    exports.add_transform = add_transform;
+    exports.afterUpdate = afterUpdate2;
+    exports.append = append;
+    exports.append_dev = append_dev;
+    exports.append_empty_stylesheet = append_empty_stylesheet;
+    exports.append_hydration = append_hydration;
+    exports.append_hydration_dev = append_hydration_dev;
+    exports.append_styles = append_styles;
+    exports.assign = assign;
+    exports.attr = attr;
+    exports.attr_dev = attr_dev;
+    exports.attribute_to_object = attribute_to_object;
+    exports.beforeUpdate = beforeUpdate;
+    exports.bind = bind;
+    exports.binding_callbacks = binding_callbacks;
+    exports.blank_object = blank_object2;
+    exports.bubble = bubble;
+    exports.check_outros = check_outros;
+    exports.children = children;
+    exports.claim_component = claim_component;
+    exports.claim_element = claim_element;
+    exports.claim_html_tag = claim_html_tag;
+    exports.claim_space = claim_space;
+    exports.claim_text = claim_text;
+    exports.clear_loops = clear_loops;
+    exports.component_subscribe = component_subscribe;
+    exports.compute_rest_props = compute_rest_props;
+    exports.compute_slots = compute_slots;
+    exports.createEventDispatcher = createEventDispatcher;
+    exports.create_animation = create_animation;
+    exports.create_bidirectional_transition = create_bidirectional_transition;
+    exports.create_component = create_component;
+    exports.create_in_transition = create_in_transition;
+    exports.create_out_transition = create_out_transition;
+    exports.create_slot = create_slot;
+    exports.create_ssr_component = create_ssr_component2;
+    exports.custom_event = custom_event;
+    exports.dataset_dev = dataset_dev;
+    exports.debug = debug;
+    exports.destroy_block = destroy_block;
+    exports.destroy_component = destroy_component;
+    exports.destroy_each = destroy_each;
+    exports.detach = detach;
+    exports.detach_after_dev = detach_after_dev;
+    exports.detach_before_dev = detach_before_dev;
+    exports.detach_between_dev = detach_between_dev;
+    exports.detach_dev = detach_dev;
+    exports.dirty_components = dirty_components;
+    exports.dispatch_dev = dispatch_dev;
+    exports.each = each2;
+    exports.element = element;
+    exports.element_is = element_is;
+    exports.empty = empty2;
+    exports.end_hydrating = end_hydrating;
+    exports.escape = escape3;
+    exports.escape_attribute_value = escape_attribute_value;
+    exports.escape_object = escape_object;
+    exports.escaped = escaped3;
+    exports.exclude_internal_props = exclude_internal_props;
+    exports.fix_and_destroy_block = fix_and_destroy_block;
+    exports.fix_and_outro_and_destroy_block = fix_and_outro_and_destroy_block;
+    exports.fix_position = fix_position;
+    exports.flush = flush;
+    exports.getAllContexts = getAllContexts;
+    exports.getContext = getContext;
+    exports.get_binding_group_value = get_binding_group_value;
+    exports.get_current_component = get_current_component2;
+    exports.get_custom_elements_slots = get_custom_elements_slots;
+    exports.get_root_for_node = get_root_for_node;
+    exports.get_slot_changes = get_slot_changes;
+    exports.get_spread_object = get_spread_object;
+    exports.get_spread_update = get_spread_update;
+    exports.get_store_value = get_store_value;
+    exports.globals = globals;
+    exports.group_outros = group_outros;
+    exports.handle_promise = handle_promise;
+    exports.hasContext = hasContext;
+    exports.has_prop = has_prop;
+    exports.identity = identity;
+    exports.init = init2;
+    exports.insert = insert;
+    exports.insert_dev = insert_dev;
+    exports.insert_hydration = insert_hydration;
+    exports.insert_hydration_dev = insert_hydration_dev;
+    exports.intros = intros;
+    exports.invalid_attribute_name_character = invalid_attribute_name_character;
+    exports.is_client = is_client;
+    exports.is_crossorigin = is_crossorigin;
+    exports.is_empty = is_empty;
+    exports.is_function = is_function;
+    exports.is_promise = is_promise;
+    exports.listen = listen;
+    exports.listen_dev = listen_dev;
+    exports.loop = loop;
+    exports.loop_guard = loop_guard;
+    exports.missing_component = missing_component2;
+    exports.mount_component = mount_component;
+    exports.noop = noop3;
+    exports.not_equal = not_equal;
+    exports.null_to_empty = null_to_empty;
+    exports.object_without_properties = object_without_properties;
+    exports.onDestroy = onDestroy;
+    exports.onMount = onMount;
+    exports.once = once;
+    exports.outro_and_destroy_block = outro_and_destroy_block;
+    exports.prevent_default = prevent_default;
+    exports.prop_dev = prop_dev;
+    exports.query_selector_all = query_selector_all;
+    exports.run = run2;
+    exports.run_all = run_all2;
+    exports.safe_not_equal = safe_not_equal2;
+    exports.schedule_update = schedule_update;
+    exports.select_multiple_value = select_multiple_value;
+    exports.select_option = select_option;
+    exports.select_options = select_options;
+    exports.select_value = select_value;
+    exports.self = self2;
+    exports.setContext = setContext2;
+    exports.set_attributes = set_attributes;
+    exports.set_current_component = set_current_component2;
+    exports.set_custom_element_data = set_custom_element_data;
+    exports.set_data = set_data;
+    exports.set_data_dev = set_data_dev;
+    exports.set_input_type = set_input_type;
+    exports.set_input_value = set_input_value;
+    exports.set_now = set_now;
+    exports.set_raf = set_raf;
+    exports.set_store_value = set_store_value;
+    exports.set_style = set_style;
+    exports.set_svg_attributes = set_svg_attributes;
+    exports.space = space;
+    exports.spread = spread;
+    exports.src_url_equal = src_url_equal;
+    exports.start_hydrating = start_hydrating;
+    exports.stop_propagation = stop_propagation;
+    exports.subscribe = subscribe2;
+    exports.svg_element = svg_element;
+    exports.text = text;
+    exports.tick = tick;
+    exports.time_ranges_to_array = time_ranges_to_array;
+    exports.to_number = to_number;
+    exports.toggle_class = toggle_class;
+    exports.transition_in = transition_in;
+    exports.transition_out = transition_out;
+    exports.trusted = trusted;
+    exports.update_await_block_branch = update_await_block_branch;
+    exports.update_keyed_each = update_keyed_each;
+    exports.update_slot = update_slot;
+    exports.update_slot_spread = update_slot_spread;
+    exports.validate_component = validate_component2;
+    exports.validate_each_argument = validate_each_argument;
+    exports.validate_each_keys = validate_each_keys;
+    exports.validate_slots = validate_slots;
+    exports.validate_store = validate_store;
+    exports.xlink_attr = xlink_attr;
+  }
+});
+
+// node_modules/svelte/store/index.js
+var require_store = __commonJS({
+  "node_modules/svelte/store/index.js"(exports) {
+    init_shims();
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var internal = require_internal2();
+    var subscriber_queue2 = [];
+    function readable(value, start) {
+      return {
+        subscribe: writable3(value, start).subscribe
+      };
+    }
+    function writable3(value, start = internal.noop) {
+      let stop;
+      const subscribers = new Set();
+      function set(new_value) {
+        if (internal.safe_not_equal(value, new_value)) {
+          value = new_value;
+          if (stop) {
+            const run_queue = !subscriber_queue2.length;
+            for (const subscriber of subscribers) {
+              subscriber[1]();
+              subscriber_queue2.push(subscriber, value);
+            }
+            if (run_queue) {
+              for (let i = 0; i < subscriber_queue2.length; i += 2) {
+                subscriber_queue2[i][0](subscriber_queue2[i + 1]);
+              }
+              subscriber_queue2.length = 0;
+            }
+          }
+        }
+      }
+      function update(fn) {
+        set(fn(value));
+      }
+      function subscribe2(run2, invalidate = internal.noop) {
+        const subscriber = [run2, invalidate];
+        subscribers.add(subscriber);
+        if (subscribers.size === 1) {
+          stop = start(set) || internal.noop;
+        }
+        run2(value);
+        return () => {
+          subscribers.delete(subscriber);
+          if (subscribers.size === 0) {
+            stop();
+            stop = null;
+          }
+        };
+      }
+      return { set, update, subscribe: subscribe2 };
+    }
+    function derived(stores, fn, initial_value) {
+      const single = !Array.isArray(stores);
+      const stores_array = single ? [stores] : stores;
+      const auto = fn.length < 2;
+      return readable(initial_value, (set) => {
+        let inited = false;
+        const values = [];
+        let pending = 0;
+        let cleanup = internal.noop;
+        const sync = () => {
+          if (pending) {
+            return;
+          }
+          cleanup();
+          const result = fn(single ? values[0] : values, set);
+          if (auto) {
+            set(result);
+          } else {
+            cleanup = internal.is_function(result) ? result : internal.noop;
+          }
+        };
+        const unsubscribers = stores_array.map((store, i) => internal.subscribe(store, (value) => {
+          values[i] = value;
+          pending &= ~(1 << i);
+          if (inited) {
+            sync();
+          }
+        }, () => {
+          pending |= 1 << i;
+        }));
+        inited = true;
+        sync();
+        return function stop() {
+          internal.run_all(unsubscribers);
+          cleanup();
+        };
+      });
+    }
+    Object.defineProperty(exports, "get", {
+      enumerable: true,
+      get: function() {
+        return internal.get_store_value;
+      }
+    });
+    exports.derived = derived;
+    exports.readable = readable;
+    exports.writable = writable3;
+  }
+});
+
+// node_modules/svelte-local-storage-store/dist/index.js
+var require_dist = __commonJS({
+  "node_modules/svelte-local-storage-store/dist/index.js"(exports) {
+    init_shims();
+    "use strict";
+    Object.defineProperty(exports, "__esModule", { value: true });
+    var _store = require_store();
+    var stores = {};
+    function writable3(key, initialValue) {
+      const browser = typeof localStorage != "undefined";
+      function updateStorage(key2, value) {
+        if (!browser)
+          return;
+        localStorage.setItem(key2, JSON.stringify(value));
+      }
+      if (!stores[key]) {
+        const store = _store.writable.call(void 0, initialValue, (set2) => {
+          const json = browser ? localStorage.getItem(key) : null;
+          if (json) {
+            set2(JSON.parse(json));
+          }
+          if (browser) {
+            const handleStorage = (event) => {
+              if (event.key === key)
+                set2(event.newValue ? JSON.parse(event.newValue) : null);
+            };
+            window.addEventListener("storage", handleStorage);
+            return () => window.removeEventListener("storage", handleStorage);
+          }
+        });
+        const { subscribe: subscribe2, set } = store;
+        stores[key] = {
+          set(value) {
+            updateStorage(key, value);
+            set(value);
+          },
+          update(updater) {
+            const value = updater(_store.get.call(void 0, store));
+            updateStorage(key, value);
+            set(value);
+          },
+          subscribe: subscribe2
+        };
+      }
+      return stores[key];
+    }
+    exports.writable = writable3;
   }
 });
 
@@ -13311,11 +15473,11 @@ async function respond(incoming, options2, state = {}) {
     const has_trailing_slash = incoming.path.endsWith("/");
     if (has_trailing_slash && options2.trailing_slash === "never" || !has_trailing_slash && options2.trailing_slash === "always" && !incoming.path.split("/").pop().includes(".")) {
       const path = has_trailing_slash ? incoming.path.slice(0, -1) : incoming.path + "/";
-      const q2 = incoming.query.toString();
+      const q = incoming.query.toString();
       return {
         status: 301,
         headers: {
-          location: encodeURI(path + (q2 ? `?${q2}` : ""))
+          location: encodeURI(path + (q ? `?${q}` : ""))
         }
       };
     }
@@ -13379,6 +15541,7 @@ async function respond(incoming, options2, state = {}) {
 
 // .svelte-kit/output/server/app.js
 var import_faunadb = __toModule(require_faunadb());
+var import_svelte_local_storage_store = __toModule(require_dist());
 function noop2() {
 }
 function run(fn) {
@@ -13389,9 +15552,6 @@ function blank_object() {
 }
 function run_all(fns) {
   fns.forEach(run);
-}
-function safe_not_equal2(a, b) {
-  return a != a ? b == b : a !== b || (a && typeof a === "object" || typeof a === "function");
 }
 function subscribe(store, ...callbacks) {
   if (store == null) {
@@ -13483,7 +15643,7 @@ function add_attribute(name, value, boolean) {
 }
 function afterUpdate() {
 }
-var css = {
+var css$e = {
   code: "#svelte-announcer.svelte-1j55zn5{position:absolute;left:0;top:0;clip:rect(0 0 0 0);clip-path:inset(50%);overflow:hidden;white-space:nowrap;width:1px;height:1px}",
   map: `{"version":3,"file":"root.svelte","sources":["root.svelte"],"sourcesContent":["<!-- This file is generated by @sveltejs/kit \u2014 do not edit it! -->\\n<script>\\n\\timport { setContext, afterUpdate, onMount } from 'svelte';\\n\\n\\t// stores\\n\\texport let stores;\\n\\texport let page;\\n\\n\\texport let components;\\n\\texport let props_0 = null;\\n\\texport let props_1 = null;\\n\\texport let props_2 = null;\\n\\texport let props_3 = null;\\n\\n\\tsetContext('__svelte__', stores);\\n\\n\\t$: stores.page.set(page);\\n\\tafterUpdate(stores.page.notify);\\n\\n\\tlet mounted = false;\\n\\tlet navigated = false;\\n\\tlet title = null;\\n\\n\\tonMount(() => {\\n\\t\\tconst unsubscribe = stores.page.subscribe(() => {\\n\\t\\t\\tif (mounted) {\\n\\t\\t\\t\\tnavigated = true;\\n\\t\\t\\t\\ttitle = document.title || 'untitled page';\\n\\t\\t\\t}\\n\\t\\t});\\n\\n\\t\\tmounted = true;\\n\\t\\treturn unsubscribe;\\n\\t});\\n<\/script>\\n\\n<svelte:component this={components[0]} {...(props_0 || {})}>\\n\\t{#if components[1]}\\n\\t\\t<svelte:component this={components[1]} {...(props_1 || {})}>\\n\\t\\t\\t{#if components[2]}\\n\\t\\t\\t\\t<svelte:component this={components[2]} {...(props_2 || {})}>\\n\\t\\t\\t\\t\\t{#if components[3]}\\n\\t\\t\\t\\t\\t\\t<svelte:component this={components[3]} {...(props_3 || {})}/>\\n\\t\\t\\t\\t\\t{/if}\\n\\t\\t\\t\\t</svelte:component>\\n\\t\\t\\t{/if}\\n\\t\\t</svelte:component>\\n\\t{/if}\\n</svelte:component>\\n\\n{#if mounted}\\n\\t<div id=\\"svelte-announcer\\" aria-live=\\"assertive\\" aria-atomic=\\"true\\">\\n\\t\\t{#if navigated}\\n\\t\\t\\t{title}\\n\\t\\t{/if}\\n\\t</div>\\n{/if}\\n\\n<style>\\n\\t#svelte-announcer {\\n\\t\\tposition: absolute;\\n\\t\\tleft: 0;\\n\\t\\ttop: 0;\\n\\t\\tclip: rect(0 0 0 0);\\n\\t\\tclip-path: inset(50%);\\n\\t\\toverflow: hidden;\\n\\t\\twhite-space: nowrap;\\n\\t\\twidth: 1px;\\n\\t\\theight: 1px;\\n\\t}\\n</style>"],"names":[],"mappings":"AA2DC,iBAAiB,eAAC,CAAC,AAClB,QAAQ,CAAE,QAAQ,CAClB,IAAI,CAAE,CAAC,CACP,GAAG,CAAE,CAAC,CACN,IAAI,CAAE,KAAK,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CACnB,SAAS,CAAE,MAAM,GAAG,CAAC,CACrB,QAAQ,CAAE,MAAM,CAChB,WAAW,CAAE,MAAM,CACnB,KAAK,CAAE,GAAG,CACV,MAAM,CAAE,GAAG,AACZ,CAAC"}`
 };
@@ -13511,7 +15671,7 @@ var Root = create_ssr_component(($$result, $$props, $$bindings, slots) => {
     $$bindings.props_2(props_2);
   if ($$props.props_3 === void 0 && $$bindings.props_3 && props_3 !== void 0)
     $$bindings.props_3(props_3);
-  $$result.css.add(css);
+  $$result.css.add(css$e);
   {
     stores.page.set(page);
   }
@@ -13536,7 +15696,7 @@ var user_hooks = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module"
 });
-var template = ({ head, body }) => '<!DOCTYPE html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<link rel="icon" href="/favicon.png" />\n		<link rel="stylesheet" href="app.css">\n		<meta name="viewport" content="width=device-width, initial-scale=1" />\n		' + head + '\n	</head>\n	<body>\n		<div id="svelte">' + body + "</div>\n	</body>\n</html>\n";
+var template = ({ head, body }) => '<!DOCTYPE html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<link rel="icon" href="/favicon.png" />\n		<link rel="stylesheet" href="/app.css">\n		<meta name="viewport" content="width=device-width, initial-scale=1" />\n		' + head + '\n	</head>\n	<body>\n		<div id="svelte">' + body + "</div>\n	</body>\n</html>\n";
 var options = null;
 var default_settings = { paths: { "base": "", "assets": "/." } };
 function init(settings = default_settings) {
@@ -13546,9 +15706,9 @@ function init(settings = default_settings) {
     amp: false,
     dev: false,
     entry: {
-      file: "/./_app/start-c9f507bf.js",
+      file: "/./_app/start-3ca64902.js",
       css: ["/./_app/assets/start-a8cd1609.css"],
-      js: ["/./_app/start-c9f507bf.js", "/./_app/chunks/vendor-91fe6b9c.js"]
+      js: ["/./_app/start-3ca64902.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/singletons-bb9012b7.js"]
     },
     fetched: void 0,
     floc: false,
@@ -13580,7 +15740,7 @@ function init(settings = default_settings) {
 var d = decodeURIComponent;
 var empty = () => ({});
 var manifest = {
-  assets: [{ "file": "app.css", "size": 8521, "type": "text/css" }, { "file": "arrow.svg", "size": 185, "type": "image/svg+xml" }, { "file": "blueberries.jpg", "size": 318545, "type": "image/jpeg" }, { "file": "bread1.jpg", "size": 57729, "type": "image/jpeg" }, { "file": "Certified.svg", "size": 1801, "type": "image/svg+xml" }, { "file": "cucumber.jpg", "size": 626692, "type": "image/jpeg" }, { "file": "delete_black_24dp.svg", "size": 203, "type": "image/svg+xml" }, { "file": "favicon.png", "size": 1571, "type": "image/png" }, { "file": "fruits.jpg", "size": 215927, "type": "image/jpeg" }, { "file": "Logo.svg", "size": 1696, "type": "image/svg+xml" }, { "file": "milk.jpg", "size": 29871, "type": "image/jpeg" }, { "file": "peas.jpg", "size": 379271, "type": "image/jpeg" }, { "file": "raspberries.jpg", "size": 418879, "type": "image/jpeg" }, { "file": "salami.jpg", "size": 669390, "type": "image/jpeg" }, { "file": "steak.jpg", "size": 600860, "type": "image/jpeg" }, { "file": "strawberries.jpg", "size": 102563, "type": "image/jpeg" }, { "file": "tomato.jpg", "size": 251370, "type": "image/jpeg" }, { "file": "watermelon.jpg", "size": 259580, "type": "image/jpeg" }],
+  assets: [{ "file": "app.css", "size": 9708, "type": "text/css" }, { "file": "arrow.svg", "size": 185, "type": "image/svg+xml" }, { "file": "blueberries-120.jpg", "size": 3057, "type": "image/jpeg" }, { "file": "blueberries-120.webp", "size": 2778, "type": "image/webp" }, { "file": "blueberries-1200.jpg", "size": 111642, "type": "image/jpeg" }, { "file": "blueberries-1200.webp", "size": 77866, "type": "image/webp" }, { "file": "blueberries-240.jpg", "size": 8788, "type": "image/jpeg" }, { "file": "blueberries-240.webp", "size": 7602, "type": "image/webp" }, { "file": "blueberries-400.jpg", "size": 19391, "type": "image/jpeg" }, { "file": "blueberries-400.webp", "size": 15178, "type": "image/webp" }, { "file": "blueberries-600.jpg", "size": 37044, "type": "image/jpeg" }, { "file": "blueberries-600.webp", "size": 27958, "type": "image/webp" }, { "file": "blueberries-800.jpg", "size": 57482, "type": "image/jpeg" }, { "file": "blueberries-800.webp", "size": 41680, "type": "image/webp" }, { "file": "CartSplash.svg", "size": 1890, "type": "image/svg+xml" }, { "file": "Certified.svg", "size": 1801, "type": "image/svg+xml" }, { "file": "cucumber-120.jpg", "size": 3242, "type": "image/jpeg" }, { "file": "cucumber-120.webp", "size": 2974, "type": "image/webp" }, { "file": "cucumber-1200.jpg", "size": 174534, "type": "image/jpeg" }, { "file": "cucumber-1200.webp", "size": 141626, "type": "image/webp" }, { "file": "cucumber-240.jpg", "size": 9958, "type": "image/jpeg" }, { "file": "cucumber-240.webp", "size": 9276, "type": "image/webp" }, { "file": "cucumber-400.jpg", "size": 23904, "type": "image/jpeg" }, { "file": "cucumber-400.webp", "size": 20854, "type": "image/webp" }, { "file": "cucumber-600.jpg", "size": 50036, "type": "image/jpeg" }, { "file": "cucumber-600.webp", "size": 42686, "type": "image/webp" }, { "file": "cucumber-800.jpg", "size": 81959, "type": "image/jpeg" }, { "file": "cucumber-800.webp", "size": 66952, "type": "image/webp" }, { "file": "delete_black_24dp.svg", "size": 203, "type": "image/svg+xml" }, { "file": "favicon.png", "size": 1571, "type": "image/png" }, { "file": "fruits-120.jpg", "size": 4466, "type": "image/jpeg" }, { "file": "fruits-120.webp", "size": 4258, "type": "image/webp" }, { "file": "fruits-1200.jpg", "size": 167014, "type": "image/jpeg" }, { "file": "fruits-1200.webp", "size": 121970, "type": "image/webp" }, { "file": "fruits-240.jpg", "size": 13900, "type": "image/jpeg" }, { "file": "fruits-240.webp", "size": 13480, "type": "image/webp" }, { "file": "fruits-400.jpg", "size": 34340, "type": "image/jpeg" }, { "file": "fruits-400.webp", "size": 32500, "type": "image/webp" }, { "file": "fruits-600.jpg", "size": 65778, "type": "image/jpeg" }, { "file": "fruits-600.webp", "size": 59386, "type": "image/webp" }, { "file": "fruits-800.jpg", "size": 96346, "type": "image/jpeg" }, { "file": "fruits-800.webp", "size": 80682, "type": "image/webp" }, { "file": "Logo.svg", "size": 1696, "type": "image/svg+xml" }, { "file": "milk-120.jpg", "size": 763, "type": "image/jpeg" }, { "file": "milk-120.webp", "size": 278, "type": "image/webp" }, { "file": "milk-1200.jpg", "size": 12615, "type": "image/jpeg" }, { "file": "milk-1200.webp", "size": 4712, "type": "image/webp" }, { "file": "milk-240.jpg", "size": 1488, "type": "image/jpeg" }, { "file": "milk-240.webp", "size": 582, "type": "image/webp" }, { "file": "milk-400.jpg", "size": 2682, "type": "image/jpeg" }, { "file": "milk-400.webp", "size": 1084, "type": "image/webp" }, { "file": "milk-600.jpg", "size": 4703, "type": "image/jpeg" }, { "file": "milk-600.webp", "size": 1806, "type": "image/webp" }, { "file": "milk-800.jpg", "size": 7050, "type": "image/jpeg" }, { "file": "milk-800.webp", "size": 2630, "type": "image/webp" }, { "file": "minus.svg", "size": 238, "type": "image/svg+xml" }, { "file": "peas-120.jpg", "size": 3894, "type": "image/jpeg" }, { "file": "peas-120.webp", "size": 3578, "type": "image/webp" }, { "file": "peas-1200.jpg", "size": 113975, "type": "image/jpeg" }, { "file": "peas-1200.webp", "size": 68560, "type": "image/webp" }, { "file": "peas-240.jpg", "size": 10505, "type": "image/jpeg" }, { "file": "peas-240.webp", "size": 8792, "type": "image/webp" }, { "file": "peas-400.jpg", "size": 21941, "type": "image/jpeg" }, { "file": "peas-400.webp", "size": 16292, "type": "image/webp" }, { "file": "peas-600.jpg", "size": 40367, "type": "image/jpeg" }, { "file": "peas-600.webp", "size": 27660, "type": "image/webp" }, { "file": "peas-800.jpg", "size": 61090, "type": "image/jpeg" }, { "file": "peas-800.webp", "size": 39162, "type": "image/webp" }, { "file": "plus.svg", "size": 264, "type": "image/svg+xml" }, { "file": "raspberries-120.jpg", "size": 3703, "type": "image/jpeg" }, { "file": "raspberries-120.webp", "size": 3502, "type": "image/webp" }, { "file": "raspberries-1200.jpg", "size": 163190, "type": "image/jpeg" }, { "file": "raspberries-1200.webp", "size": 127022, "type": "image/webp" }, { "file": "raspberries-240.jpg", "size": 11568, "type": "image/jpeg" }, { "file": "raspberries-240.webp", "size": 11354, "type": "image/webp" }, { "file": "raspberries-400.jpg", "size": 27664, "type": "image/jpeg" }, { "file": "raspberries-400.webp", "size": 25390, "type": "image/webp" }, { "file": "raspberries-600.jpg", "size": 55053, "type": "image/jpeg" }, { "file": "raspberries-600.webp", "size": 49138, "type": "image/webp" }, { "file": "raspberries-800.jpg", "size": 85895, "type": "image/jpeg" }, { "file": "raspberries-800.webp", "size": 72388, "type": "image/webp" }, { "file": "salami-120.jpg", "size": 3003, "type": "image/jpeg" }, { "file": "salami-120.webp", "size": 2542, "type": "image/webp" }, { "file": "salami-1200.jpg", "size": 184303, "type": "image/jpeg" }, { "file": "salami-1200.webp", "size": 166868, "type": "image/webp" }, { "file": "salami-240.jpg", "size": 9199, "type": "image/jpeg" }, { "file": "salami-240.webp", "size": 8322, "type": "image/webp" }, { "file": "salami-400.jpg", "size": 22597, "type": "image/jpeg" }, { "file": "salami-400.webp", "size": 19784, "type": "image/webp" }, { "file": "salami-600.jpg", "size": 48543, "type": "image/jpeg" }, { "file": "salami-600.webp", "size": 43242, "type": "image/webp" }, { "file": "salami-800.jpg", "size": 81448, "type": "image/jpeg" }, { "file": "salami-800.webp", "size": 71342, "type": "image/webp" }, { "file": "steak-120.jpg", "size": 2711, "type": "image/jpeg" }, { "file": "steak-120.webp", "size": 2386, "type": "image/webp" }, { "file": "steak-1200.jpg", "size": 192413, "type": "image/jpeg" }, { "file": "steak-1200.webp", "size": 167572, "type": "image/webp" }, { "file": "steak-240.jpg", "size": 9045, "type": "image/jpeg" }, { "file": "steak-240.webp", "size": 8514, "type": "image/webp" }, { "file": "steak-400.jpg", "size": 23380, "type": "image/jpeg" }, { "file": "steak-400.webp", "size": 21362, "type": "image/webp" }, { "file": "steak-600.jpg", "size": 52008, "type": "image/jpeg" }, { "file": "steak-600.webp", "size": 47630, "type": "image/webp" }, { "file": "steak-800.jpg", "size": 87916, "type": "image/jpeg" }, { "file": "steak-800.webp", "size": 78296, "type": "image/webp" }, { "file": "strawberries-120.jpg", "size": 3504, "type": "image/jpeg" }, { "file": "strawberries-120.webp", "size": 3378, "type": "image/webp" }, { "file": "strawberries-1200.jpg", "size": 154871, "type": "image/jpeg" }, { "file": "strawberries-1200.webp", "size": 114224, "type": "image/webp" }, { "file": "strawberries-240.jpg", "size": 11875, "type": "image/jpeg" }, { "file": "strawberries-240.webp", "size": 12296, "type": "image/webp" }, { "file": "strawberries-400.jpg", "size": 30386, "type": "image/jpeg" }, { "file": "strawberries-400.webp", "size": 29626, "type": "image/webp" }, { "file": "strawberries-600.jpg", "size": 59548, "type": "image/jpeg" }, { "file": "strawberries-600.webp", "size": 54610, "type": "image/webp" }, { "file": "strawberries-800.jpg", "size": 88157, "type": "image/jpeg" }, { "file": "strawberries-800.webp", "size": 73916, "type": "image/webp" }, { "file": "tomato-120.jpg", "size": 3256, "type": "image/jpeg" }, { "file": "tomato-120.webp", "size": 2970, "type": "image/webp" }, { "file": "tomato-1200.jpg", "size": 85983, "type": "image/jpeg" }, { "file": "tomato-1200.webp", "size": 50060, "type": "image/webp" }, { "file": "tomato-240.jpg", "size": 8644, "type": "image/jpeg" }, { "file": "tomato-240.webp", "size": 7204, "type": "image/webp" }, { "file": "tomato-400.jpg", "size": 18053, "type": "image/jpeg" }, { "file": "tomato-400.webp", "size": 13650, "type": "image/webp" }, { "file": "tomato-600.jpg", "size": 32489, "type": "image/jpeg" }, { "file": "tomato-600.webp", "size": 22634, "type": "image/webp" }, { "file": "tomato-800.jpg", "size": 48535, "type": "image/jpeg" }, { "file": "tomato-800.webp", "size": 31384, "type": "image/webp" }, { "file": "watermelon-120.jpg", "size": 2915, "type": "image/jpeg" }, { "file": "watermelon-120.webp", "size": 2440, "type": "image/webp" }, { "file": "watermelon-1200.jpg", "size": 89877, "type": "image/jpeg" }, { "file": "watermelon-1200.webp", "size": 51830, "type": "image/webp" }, { "file": "watermelon-240.jpg", "size": 7785, "type": "image/jpeg" }, { "file": "watermelon-240.webp", "size": 6184, "type": "image/webp" }, { "file": "watermelon-400.jpg", "size": 16966, "type": "image/jpeg" }, { "file": "watermelon-400.webp", "size": 11764, "type": "image/webp" }, { "file": "watermelon-600.jpg", "size": 31731, "type": "image/jpeg" }, { "file": "watermelon-600.webp", "size": 21334, "type": "image/webp" }, { "file": "watermelon-800.jpg", "size": 48495, "type": "image/jpeg" }, { "file": "watermelon-800.webp", "size": 30198, "type": "image/webp" }],
   layout: "src/routes/__layout.svelte",
   error: ".svelte-kit/build/components/error.svelte",
   routes: [
@@ -13600,6 +15760,20 @@ var manifest = {
     },
     {
       type: "page",
+      pattern: /^\/backstore\/products\/new\/?$/,
+      params: empty,
+      a: ["src/routes/__layout.svelte", "src/routes/backstore/__layout.svelte", "src/routes/backstore/products/new.svelte"],
+      b: [".svelte-kit/build/components/error.svelte"]
+    },
+    {
+      type: "page",
+      pattern: /^\/backstore\/products\/([^/]+?)\/?$/,
+      params: (m) => ({ product: d(m[1]) }),
+      a: ["src/routes/__layout.svelte", "src/routes/backstore/__layout.svelte", "src/routes/backstore/products/[product].svelte"],
+      b: [".svelte-kit/build/components/error.svelte"]
+    },
+    {
+      type: "page",
       pattern: /^\/backstore\/orders\/?$/,
       params: empty,
       a: ["src/routes/__layout.svelte", "src/routes/backstore/__layout.svelte", "src/routes/backstore/orders/index.svelte"],
@@ -13607,9 +15781,37 @@ var manifest = {
     },
     {
       type: "page",
+      pattern: /^\/backstore\/orders\/new\/?$/,
+      params: empty,
+      a: ["src/routes/__layout.svelte", "src/routes/backstore/__layout.svelte", "src/routes/backstore/orders/new.svelte"],
+      b: [".svelte-kit/build/components/error.svelte"]
+    },
+    {
+      type: "page",
+      pattern: /^\/backstore\/orders\/([^/]+?)\/?$/,
+      params: (m) => ({ order: d(m[1]) }),
+      a: ["src/routes/__layout.svelte", "src/routes/backstore/__layout.svelte", "src/routes/backstore/orders/[order].svelte"],
+      b: [".svelte-kit/build/components/error.svelte"]
+    },
+    {
+      type: "page",
       pattern: /^\/backstore\/users\/?$/,
       params: empty,
       a: ["src/routes/__layout.svelte", "src/routes/backstore/__layout.svelte", "src/routes/backstore/users/index.svelte"],
+      b: [".svelte-kit/build/components/error.svelte"]
+    },
+    {
+      type: "page",
+      pattern: /^\/backstore\/users\/new\/?$/,
+      params: empty,
+      a: ["src/routes/__layout.svelte", "src/routes/backstore/__layout.svelte", "src/routes/backstore/users/new.svelte"],
+      b: [".svelte-kit/build/components/error.svelte"]
+    },
+    {
+      type: "page",
+      pattern: /^\/backstore\/users\/([^/]+?)\/?$/,
+      params: (m) => ({ user: d(m[1]) }),
+      a: ["src/routes/__layout.svelte", "src/routes/backstore/__layout.svelte", "src/routes/backstore/users/[user].svelte"],
       b: [".svelte-kit/build/components/error.svelte"]
     },
     {
@@ -13663,10 +15865,138 @@ var manifest = {
     },
     {
       type: "endpoint",
-      pattern: /^\/api\/hello-world\/?$/,
+      pattern: /^\/api\/deleteproduct\/?$/,
       params: empty,
       load: () => Promise.resolve().then(function() {
-        return helloWorld;
+        return deleteproduct;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/ordersbyemail\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return ordersbyemail;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/productbyname\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return productbyname;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/deleteorder\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return deleteorder;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/editproduct\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return editproduct;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/productlist\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return productlist;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/deleteuser\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return deleteuser;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/newproduct\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return newproduct;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/ordersbyid\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return ordersbyid;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/editorder\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return editorder;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/orderlist\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return orderlist;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/checkout\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return checkout;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/edituser\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return edituser;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/userlist\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return userlist;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/newUser\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return newUser;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/logout\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return logout;
+      })
+    },
+    {
+      type: "endpoint",
+      pattern: /^\/api\/login\/?$/,
+      params: empty,
+      load: () => Promise.resolve().then(function() {
+        return login$1;
       })
     }
   ]
@@ -13692,11 +16022,29 @@ var module_lookup = {
   "src/routes/backstore/products/index.svelte": () => Promise.resolve().then(function() {
     return index$4;
   }),
+  "src/routes/backstore/products/new.svelte": () => Promise.resolve().then(function() {
+    return _new$2;
+  }),
+  "src/routes/backstore/products/[product].svelte": () => Promise.resolve().then(function() {
+    return _product_$1;
+  }),
   "src/routes/backstore/orders/index.svelte": () => Promise.resolve().then(function() {
     return index$3;
   }),
+  "src/routes/backstore/orders/new.svelte": () => Promise.resolve().then(function() {
+    return _new$1;
+  }),
+  "src/routes/backstore/orders/[order].svelte": () => Promise.resolve().then(function() {
+    return _order_;
+  }),
   "src/routes/backstore/users/index.svelte": () => Promise.resolve().then(function() {
     return index$2;
+  }),
+  "src/routes/backstore/users/new.svelte": () => Promise.resolve().then(function() {
+    return _new;
+  }),
+  "src/routes/backstore/users/[user].svelte": () => Promise.resolve().then(function() {
+    return _user_;
   }),
   "src/routes/products/index.svelte": () => Promise.resolve().then(function() {
     return index$1;
@@ -13720,7 +16068,7 @@ var module_lookup = {
     return cart;
   })
 };
-var metadata_lookup = { "src/routes/__layout.svelte": { "entry": "/./_app/pages/__layout.svelte-6d23c8d7.js", "css": [], "js": ["/./_app/pages/__layout.svelte-6d23c8d7.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, ".svelte-kit/build/components/error.svelte": { "entry": "/./_app/error.svelte-31675049.js", "css": [], "js": ["/./_app/error.svelte-31675049.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, "src/routes/index.svelte": { "entry": "/./_app/pages/index.svelte-169523ce.js", "css": [], "js": ["/./_app/pages/index.svelte-169523ce.js", "/./_app/chunks/vendor-91fe6b9c.js", "/./_app/chunks/productcard-f8e80c01.js", "/./_app/chunks/products-93807a47.js"], "styles": [] }, "src/routes/backstore/__layout.svelte": { "entry": "/./_app/pages/backstore/__layout.svelte-8b805fa6.js", "css": [], "js": ["/./_app/pages/backstore/__layout.svelte-8b805fa6.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, "src/routes/backstore/products/index.svelte": { "entry": "/./_app/pages/backstore/products/index.svelte-619c015c.js", "css": [], "js": ["/./_app/pages/backstore/products/index.svelte-619c015c.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, "src/routes/backstore/orders/index.svelte": { "entry": "/./_app/pages/backstore/orders/index.svelte-f4a14ab6.js", "css": [], "js": ["/./_app/pages/backstore/orders/index.svelte-f4a14ab6.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, "src/routes/backstore/users/index.svelte": { "entry": "/./_app/pages/backstore/users/index.svelte-fc96d827.js", "css": [], "js": ["/./_app/pages/backstore/users/index.svelte-fc96d827.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, "src/routes/products/index.svelte": { "entry": "/./_app/pages/products/index.svelte-ce325eb3.js", "css": [], "js": ["/./_app/pages/products/index.svelte-ce325eb3.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, "src/routes/products/[product].svelte": { "entry": "/./_app/pages/products/[product].svelte-1d1086af.js", "css": [], "js": ["/./_app/pages/products/[product].svelte-1d1086af.js", "/./_app/chunks/vendor-91fe6b9c.js", "/./_app/chunks/products-93807a47.js"], "styles": [] }, "src/routes/aisles/index.svelte": { "entry": "/./_app/pages/aisles/index.svelte-872246d8.js", "css": [], "js": ["/./_app/pages/aisles/index.svelte-872246d8.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, "src/routes/aisles/[aisle].svelte": { "entry": "/./_app/pages/aisles/[aisle].svelte-4fdc5cd0.js", "css": [], "js": ["/./_app/pages/aisles/[aisle].svelte-4fdc5cd0.js", "/./_app/chunks/vendor-91fe6b9c.js", "/./_app/chunks/products-93807a47.js", "/./_app/chunks/productcard-f8e80c01.js"], "styles": [] }, "src/routes/signup.svelte": { "entry": "/./_app/pages/signup.svelte-f3b5d64b.js", "css": [], "js": ["/./_app/pages/signup.svelte-f3b5d64b.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, "src/routes/login.svelte": { "entry": "/./_app/pages/login.svelte-ab76051d.js", "css": [], "js": ["/./_app/pages/login.svelte-ab76051d.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] }, "src/routes/cart.svelte": { "entry": "/./_app/pages/cart.svelte-84425300.js", "css": [], "js": ["/./_app/pages/cart.svelte-84425300.js", "/./_app/chunks/vendor-91fe6b9c.js"], "styles": [] } };
+var metadata_lookup = { "src/routes/__layout.svelte": { "entry": "/./_app/pages/__layout.svelte-fd2733bf.js", "css": ["/./_app/assets/pages/__layout.svelte-af2cca07.css"], "js": ["/./_app/pages/__layout.svelte-fd2733bf.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/stores-30180c6b.js"], "styles": [] }, ".svelte-kit/build/components/error.svelte": { "entry": "/./_app/error.svelte-8a716566.js", "css": [], "js": ["/./_app/error.svelte-8a716566.js", "/./_app/chunks/vendor-a95f158c.js"], "styles": [] }, "src/routes/index.svelte": { "entry": "/./_app/pages/index.svelte-e483e5dd.js", "css": ["/./_app/assets/pages/index.svelte-9a070f8c.css"], "js": ["/./_app/pages/index.svelte-e483e5dd.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/productcard-6ce882ae.js"], "styles": [] }, "src/routes/backstore/__layout.svelte": { "entry": "/./_app/pages/backstore/__layout.svelte-38294ff4.js", "css": ["/./_app/assets/pages/backstore/__layout.svelte-c8c664e9.css"], "js": ["/./_app/pages/backstore/__layout.svelte-38294ff4.js", "/./_app/chunks/vendor-a95f158c.js"], "styles": [] }, "src/routes/backstore/products/index.svelte": { "entry": "/./_app/pages/backstore/products/index.svelte-5cd6fc67.js", "css": ["/./_app/assets/pages/backstore/products/index.svelte-ed759f44.css"], "js": ["/./_app/pages/backstore/products/index.svelte-5cd6fc67.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/stores-30180c6b.js"], "styles": [] }, "src/routes/backstore/products/new.svelte": { "entry": "/./_app/pages/backstore/products/new.svelte-e31b01a2.js", "css": ["/./_app/assets/pages/backstore/products/new.svelte-93f2eb8b.css"], "js": ["/./_app/pages/backstore/products/new.svelte-e31b01a2.js", "/./_app/chunks/vendor-a95f158c.js"], "styles": [] }, "src/routes/backstore/products/[product].svelte": { "entry": "/./_app/pages/backstore/products/[product].svelte-160be3fa.js", "css": ["/./_app/assets/pages/backstore/products/[product].svelte-81286b6d.css"], "js": ["/./_app/pages/backstore/products/[product].svelte-160be3fa.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/navigation-20968cc5.js", "/./_app/chunks/singletons-bb9012b7.js"], "styles": [] }, "src/routes/backstore/orders/index.svelte": { "entry": "/./_app/pages/backstore/orders/index.svelte-5db5f3b1.js", "css": ["/./_app/assets/pages/backstore/orders/index.svelte-4f777fcc.css"], "js": ["/./_app/pages/backstore/orders/index.svelte-5db5f3b1.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/stores-30180c6b.js"], "styles": [] }, "src/routes/backstore/orders/new.svelte": { "entry": "/./_app/pages/backstore/orders/new.svelte-2fc8bc97.js", "css": [], "js": ["/./_app/pages/backstore/orders/new.svelte-2fc8bc97.js", "/./_app/chunks/vendor-a95f158c.js"], "styles": [] }, "src/routes/backstore/orders/[order].svelte": { "entry": "/./_app/pages/backstore/orders/[order].svelte-5c525131.js", "css": ["/./_app/assets/pages/backstore/orders/[order].svelte-5e813359.css"], "js": ["/./_app/pages/backstore/orders/[order].svelte-5c525131.js", "/./_app/chunks/vendor-a95f158c.js"], "styles": [] }, "src/routes/backstore/users/index.svelte": { "entry": "/./_app/pages/backstore/users/index.svelte-4b92d2e7.js", "css": ["/./_app/assets/pages/backstore/users/index.svelte-df42e405.css"], "js": ["/./_app/pages/backstore/users/index.svelte-4b92d2e7.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/stores-30180c6b.js"], "styles": [] }, "src/routes/backstore/users/new.svelte": { "entry": "/./_app/pages/backstore/users/new.svelte-c361bc00.js", "css": ["/./_app/assets/pages/backstore/users/new.svelte-cc1fab41.css"], "js": ["/./_app/pages/backstore/users/new.svelte-c361bc00.js", "/./_app/chunks/vendor-a95f158c.js"], "styles": [] }, "src/routes/backstore/users/[user].svelte": { "entry": "/./_app/pages/backstore/users/[user].svelte-ee588a59.js", "css": ["/./_app/assets/pages/backstore/users/[user].svelte-9c7303b4.css"], "js": ["/./_app/pages/backstore/users/[user].svelte-ee588a59.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/navigation-20968cc5.js", "/./_app/chunks/singletons-bb9012b7.js"], "styles": [] }, "src/routes/products/index.svelte": { "entry": "/./_app/pages/products/index.svelte-3373e9c9.js", "css": [], "js": ["/./_app/pages/products/index.svelte-3373e9c9.js", "/./_app/chunks/vendor-a95f158c.js"], "styles": [] }, "src/routes/products/[product].svelte": { "entry": "/./_app/pages/products/[product].svelte-b5c90fcb.js", "css": [], "js": ["/./_app/pages/products/[product].svelte-b5c90fcb.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/stores-30180c6b.js"], "styles": [] }, "src/routes/aisles/index.svelte": { "entry": "/./_app/pages/aisles/index.svelte-e15e7c7d.js", "css": ["/./_app/assets/pages/aisles/index.svelte-0524fffc.css"], "js": ["/./_app/pages/aisles/index.svelte-e15e7c7d.js", "/./_app/chunks/vendor-a95f158c.js"], "styles": [] }, "src/routes/aisles/[aisle].svelte": { "entry": "/./_app/pages/aisles/[aisle].svelte-ea30a2f1.js", "css": [], "js": ["/./_app/pages/aisles/[aisle].svelte-ea30a2f1.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/productcard-6ce882ae.js"], "styles": [] }, "src/routes/signup.svelte": { "entry": "/./_app/pages/signup.svelte-f296d67c.js", "css": ["/./_app/assets/pages/signup.svelte-96cf076d.css"], "js": ["/./_app/pages/signup.svelte-f296d67c.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/navigation-20968cc5.js", "/./_app/chunks/singletons-bb9012b7.js"], "styles": [] }, "src/routes/login.svelte": { "entry": "/./_app/pages/login.svelte-dc329a26.js", "css": ["/./_app/assets/pages/login.svelte-93a2eedc.css"], "js": ["/./_app/pages/login.svelte-dc329a26.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/stores-30180c6b.js", "/./_app/chunks/navigation-20968cc5.js", "/./_app/chunks/singletons-bb9012b7.js"], "styles": [] }, "src/routes/cart.svelte": { "entry": "/./_app/pages/cart.svelte-8afa45a1.js", "css": [], "js": ["/./_app/pages/cart.svelte-8afa45a1.js", "/./_app/chunks/vendor-a95f158c.js", "/./_app/chunks/stores-30180c6b.js"], "styles": [] } };
 async function load_component(file) {
   return {
     module: await module_lookup[file](),
@@ -13733,40 +16081,506 @@ function render(request, {
   const host = request.headers["host"];
   return respond({ ...request, host }, options, { prerender });
 }
-var q = import_faunadb.default.query;
-var client = new import_faunadb.default.Client({
-  secret: "fnAEPGcbctACRIQyJcww1pSFWkFEK6ooGuNwjkRN"
+async function post$f(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const name = items.name;
+  const secret2 = items.secret;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const products = client.query(q.Paginate(q.Match(q.Index("product_by_name"), [name]))).then((ret) => {
+    let collection = String(ret.data[0]).split('"')[1];
+    let id = String(ret.data[0]).split('"')[3];
+    return client.query(q.Delete(q.Ref(q.Collection(collection), id))).then((ret2) => {
+      console.log(ret2);
+      return ret2;
+    });
+  });
+  return {
+    body: await products
+  };
+}
+var deleteproduct = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$f
+});
+async function post$e(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const secret2 = items.secret;
+  const email = items.email;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const orders = client.query(q.Map(q.Paginate(q.Match(q.Index("orders_by_email"), [email])), q.Lambda((x) => q.Get(x)))).then((ret) => {
+    return ret;
+  });
+  return {
+    body: await orders
+  };
+}
+var ordersbyemail = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$e
+});
+async function post$d(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const name = items.name;
+  const adminSecret = "fnAEPGcbctACRIQyJcww1pSFWkFEK6ooGuNwjkRN";
+  const client = new import_faunadb.default.Client({
+    secret: adminSecret
+  });
+  const products = client.query(q.Map(q.Paginate(q.Match(q.Index("product_by_name"), [name])), q.Lambda((x) => q.Get(x)))).then((ret) => {
+    return ret;
+  });
+  return {
+    body: await products
+  };
+}
+var productbyname = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$d
+});
+async function post$c(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const id = items.id;
+  const secret2 = items.secret;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const products = client.query(q.Delete(q.Ref(q.Collection("orders"), id))).then((ret) => {
+    console.log(ret);
+    return ret;
+  });
+  return {
+    body: await products
+  };
+}
+var deleteorder = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$c
+});
+async function post$b(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const ogname = items.ogname;
+  const name = items.name;
+  const price = items.price;
+  const rebate = items.rebate;
+  const origin = items.origin;
+  const description = items.description;
+  const image = items.image;
+  const aisle = items.aisle;
+  const secret2 = items.secret;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const products = client.query(q.Paginate(q.Match(q.Index("product_by_name"), [ogname]))).then((ret) => {
+    let collection = String(ret.data[0]).split('"')[1];
+    let id = String(ret.data[0]).split('"')[3];
+    client.query(q.Update(q.Ref(q.Collection(collection), id), {
+      data: {
+        name,
+        price,
+        rebate,
+        origin,
+        description,
+        image,
+        aisle
+      }
+    })).then((ret2) => {
+      console.log(ret2);
+    });
+    return ret;
+  });
+  return {
+    body: await products
+  };
+}
+var editproduct = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$b
 });
 async function get({ params }) {
-  const products = client.query(q.Paginate(q.Match(q.Index("all_products"))));
-  if (products) {
-    return {
-      body: {
-        products
-      }
-    };
-  }
+  const q = import_faunadb.default.query;
+  const adminSecret = "fnAEPGcbctACRIQyJcww1pSFWkFEK6ooGuNwjkRN";
+  const client = new import_faunadb.default.Client({
+    secret: adminSecret
+  });
+  const products = client.query(q.Map(q.Paginate(q.Match(q.Index("all_products"))), q.Lambda((x) => q.Get(x)))).then((ret) => {
+    return ret;
+  });
+  return {
+    body: await products
+  };
 }
-var helloWorld = /* @__PURE__ */ Object.freeze({
+var productlist = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module",
   get
 });
+async function post$a(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const email = items.email;
+  const secret2 = items.secret;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const products = client.query(q.Paginate(q.Match(q.Index("users_by_email"), [email]))).then((ret) => {
+    let collection = String(ret.data[0]).split('"')[1];
+    let id = String(ret.data[0]).split('"')[3];
+    return client.query(q.Delete(q.Ref(q.Collection(collection), id))).then((ret2) => {
+      return client.query(q.Paginate(q.Match(q.Index("orders_by_email"), [email]))).then((ret3) => {
+        ret3.data.forEach((order) => {
+          let o_collection = String(order).split('"')[1];
+          let o_id = String(order).split('"')[3];
+          return client.query(q.Delete(q.Ref(q.Collection(o_collection), o_id))).then((ret4) => {
+            return ret4;
+          });
+        });
+      });
+    });
+  });
+  return {
+    body: await products
+  };
+}
+var deleteuser = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$a
+});
+async function post$9(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const secret2 = items.secret;
+  const name = items.name;
+  const price = items.price;
+  const rebate = items.rebate;
+  const origin = items.origin;
+  const description = items.description;
+  const image = items.image;
+  const aisle = items.aisle;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const newproduct2 = client.query(q.Create(q.Collection("products"), {
+    data: {
+      name,
+      price,
+      rebate,
+      origin,
+      description,
+      image,
+      aisle
+    }
+  })).then((ret) => {
+    return ret;
+  });
+  return {
+    body: await newproduct2
+  };
+}
+var newproduct = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$9
+});
+async function post$8(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const secret2 = items.secret;
+  const id = items.id;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const orders = client.query(q.Get(q.Ref(q.Collection("orders"), id))).then((ret) => {
+    return ret;
+  });
+  return {
+    body: await orders
+  };
+}
+var ordersbyid = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$8
+});
+async function post$7(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const id = items.id;
+  const cart2 = items.cart;
+  const secret2 = items.secret;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const products = client.query(q.Update(q.Ref(q.Collection("orders"), id), {
+    data: {
+      cart: cart2
+    }
+  })).then((ret) => {
+    console.log(ret);
+    return ret;
+  });
+  return {
+    body: await products
+  };
+}
+var editorder = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$7
+});
+async function post$6(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const secret2 = items.secret;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const orders = client.query(q.Map(q.Paginate(q.Match(q.Index("all_orders"))), q.Lambda((x) => q.Get(x)))).then((ret) => {
+    return ret;
+  });
+  return {
+    body: await orders
+  };
+}
+var orderlist = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$6
+});
+async function post$5(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const secret2 = items.secret;
+  const user = items.user;
+  const cart2 = items.cart;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const checkout2 = client.query(q.Create(q.Collection("orders"), {
+    data: {
+      email: user,
+      cart: cart2
+    }
+  })).then((ret) => {
+    return ret;
+  });
+  return {
+    body: await checkout2
+  };
+}
+var checkout = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$5
+});
+async function post$4(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const ogemail = items.ogemail;
+  const email = items.email;
+  const secret2 = items.secret;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const userChange = client.query(q.Paginate(q.Match(q.Index("users_by_email"), [ogemail]))).then((ret) => {
+    console.log(ret);
+    let collection = String(ret.data[0]).split('"')[1];
+    let id = String(ret.data[0]).split('"')[3];
+    return client.query(q.Update(q.Ref(q.Collection(collection), id), {
+      data: {
+        email
+      }
+    })).then((ret2) => {
+      return client.query(q.Paginate(q.Match(q.Index("orders_by_email"), [ogemail]))).then((ret3) => {
+        ret3.data.forEach((order) => {
+          let o_collection = String(order).split('"')[1];
+          let o_id = String(order).split('"')[3];
+          return client.query(q.Update(q.Ref(q.Collection(o_collection), o_id), {
+            data: {
+              email
+            }
+          })).then((ret4) => {
+            return ret4;
+          });
+        });
+      });
+    });
+  });
+  return {
+    body: await userChange
+  };
+}
+var edituser = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$4
+});
+async function post$3(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  const secret2 = items.secret;
+  const client = new import_faunadb.default.Client({
+    secret: secret2
+  });
+  const users = client.query(q.Map(q.Paginate(q.Match(q.Index("all_users"))), q.Lambda((x) => q.Get(x)))).then((ret) => {
+    return ret;
+  });
+  return {
+    body: await users
+  };
+}
+var userlist = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$3
+});
+async function post$2(request) {
+  const q = import_faunadb.default.query;
+  const items = JSON.parse(request.body);
+  if (items.secret == "admin")
+    ;
+  else {
+    items.secret;
+  }
+  const email = items.email;
+  const password = items.password;
+  const client = new import_faunadb.default.Client({
+    secret
+  });
+  const newuser = client.query(q.Create(q.Collection("users"), {
+    data: {
+      email
+    },
+    credentials: {
+      password
+    }
+  })).then((ret) => {
+    return ret;
+  });
+  return {
+    body: await newuser
+  };
+}
+var newUser = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$2
+});
+async function post$1(req) {
+  const items = JSON.parse(req.body);
+  const q = import_faunadb.default.query;
+  const client = new import_faunadb.default.Client({
+    secret: items.secret
+  });
+  client.query(q.Logout(true)).catch((error22) => {
+    return error22;
+  }).then((ret) => {
+    return ret;
+  });
+  return { ok: true };
+}
+var logout = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post: post$1
+});
+async function post(req) {
+  const items = JSON.parse(req.body);
+  const q = import_faunadb.default.query;
+  const adminSecret = "fnAEPGcbctACRIQyJcww1pSFWkFEK6ooGuNwjkRN";
+  const client = new import_faunadb.default.Client({
+    secret: adminSecret
+  });
+  const login2 = client.query(q.Login(q.Match(q.Index("users_by_email"), items.email), { password: items.password })).catch((error22) => {
+    return error22;
+  }).then((ret) => {
+    if (!ret.requestResult) {
+      return ret;
+    } else {
+      return false;
+    }
+  });
+  const login22 = client.query(q.Login(q.Match(q.Index("managers_by_email"), items.email), { password: items.password })).catch((error22) => {
+    return error22;
+  }).then((ret) => {
+    if (!ret.requestResult) {
+      return ret;
+    } else {
+      return false;
+    }
+  });
+  if (await login2) {
+    console.log("user");
+    return { body: { data: [await login2, "user", items.email] } };
+  } else {
+    if (await login22) {
+      console.log("manager");
+      return { body: { data: [await login22, "manager", items.email] } };
+    }
+  }
+  return { ok: false };
+}
+var login$1 = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  post
+});
+var cart$1 = (0, import_svelte_local_storage_store.writable)("cart", []);
+var userCredentials = (0, import_svelte_local_storage_store.writable)("userCredentials", {
+  secret: "",
+  type: "",
+  email: ""
+});
 var Header = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `<div class="${"header-wrapper"}"><div class="${"header"}"><a href="${"/"}"><svg class="${"logo"}" viewBox="${"0 0 87 59"}" fill="${"none"}" xmlns="${"http://www.w3.org/2000/svg"}"><path d="${"M43.2363 57.815C54.9844 57.815 65.643 54.6413 73.3792 49.4839C81.1118 44.3288 85.9726 37.1522 85.9726 29.1575C85.9726 21.1628 81.1118 13.9862 73.3792 8.83112C65.643 3.67369 54.9844 0.5 43.2363 0.5C31.4881 0.5 20.8295 3.67369 13.0934 8.83112C5.36071 13.9862 0.5 21.1628 0.5 29.1575C0.5 37.1522 5.36071 44.3288 13.0934 49.4839C20.8295 54.6413 31.4881 57.815 43.2363 57.815Z"}" fill="${"#912338"}" stroke="${"white"}"></path><path fill-rule="${"evenodd"}" clip-rule="${"evenodd"}" d="${"M63.1448 16.8022H69.1107C71.2613 16.8022 75.5623 18.311 74.5564 22.2338L67.862 41.5464H60.6127L63.2488 33.9019H59.3987L56.381 41.5464H49.4438L57.7337 19.7192C58.7743 17.3051 62.1735 16.8022 63.1448 16.8022ZM65.5034 27.5984H61.8267L63.2488 23.7426C64.1853 21.8315 67.4805 22.6027 66.9602 23.7426L65.5034 27.5984Z"}" fill="${"white"}"></path><path d="${"M52.9817 23.2062L55.4445 16.7686L41.2926 16.8357C39.0727 16.8357 38.2055 17.1375 37.4077 18.9815L30.8868 35.8465C29.6728 39.6688 31.5458 41.58 33.8004 41.58H46.2527L51.5596 27.8332H44.1368L42.125 32.896H44.6224C44.9346 32.896 45.0387 33.1307 44.9693 33.2984L44.1021 35.3436C43.9287 35.6454 43.8246 35.746 43.4778 35.746H40.0092C39.5929 35.746 38.8299 35.2766 39.1767 34.1701L42.9922 24.2456C43.1656 23.7426 43.9287 23.2732 44.7958 23.2732L52.9817 23.2062Z"}" fill="${"white"}"></path><path d="${"M32.5867 23.1726L35.0494 16.7351L20.8975 16.8022C18.6776 16.8022 17.8105 17.1039 17.0127 18.948L10.4917 35.813C9.27773 39.6353 11.1508 41.5464 13.4054 41.5464H25.8576L28.1784 35.2095H19.1976C18.7467 35.2095 18.2264 34.8407 18.4132 34.3377L22.5971 24.212C22.7706 23.7091 23.5337 23.2397 24.4008 23.2397L32.5867 23.1726Z"}" fill="${"white"}"></path></svg></a>
-		<div class="${"nav"}"><a href="${"/signup"}"><p>Sign Up</p></a>
-			<a href="${"/login"}"><p>Login</p></a>
-			<a href="${"/aisles"}"><p>Aisles</p></a>
-			<a href="${"/cart"}"><svg class="${"cart-icon"}" viewBox="${"0 0 39 28"}" fill="${"none"}" xmlns="${"http://www.w3.org/2000/svg"}"><path d="${"M20.3624 15.4C21.412 15.4 22.3357 14.826 22.8115 13.958L27.8217 4.872C28.3395 3.948 27.6677 2.8 26.6041 2.8H5.89181L4.5763 0H0V2.8H2.79896L7.83709 13.426L5.94779 16.842C4.92617 18.718 6.26967 21 8.39688 21H25.1906V18.2H8.39688L9.93631 15.4H20.3624ZM7.22132 5.6H24.225L20.3624 12.6H10.5381L7.22132 5.6ZM8.39688 22.4C6.85745 22.4 5.61192 23.66 5.61192 25.2C5.61192 26.74 6.85745 28 8.39688 28C9.93631 28 11.1958 26.74 11.1958 25.2C11.1958 23.66 9.93631 22.4 8.39688 22.4ZM22.3917 22.4C20.8523 22.4 19.6067 23.66 19.6067 25.2C19.6067 26.74 20.8523 28 22.3917 28C23.9311 28 25.1906 26.74 25.1906 25.2C25.1906 23.66 23.9311 22.4 22.3917 22.4Z"}" fill="${"white"}"></path><circle cx="${"30"}" cy="${"16"}" r="${"8.5"}" fill="${"#912338"}" stroke="${"white"}"></circle><text x="${"27"}" y="${"21"}" fill="${"white"}" style="${"font-size: 0.7rem;"}">1</text></svg></a></div></div>
+  let $userCredentials, $$unsubscribe_userCredentials;
+  let $cart, $$unsubscribe_cart;
+  $$unsubscribe_userCredentials = subscribe(userCredentials, (value) => $userCredentials = value);
+  $$unsubscribe_cart = subscribe(cart$1, (value) => $cart = value);
+  let totalQuantity;
+  {
+    {
+      totalQuantity = 0;
+      Object.values($cart).map((item) => {
+        totalQuantity = totalQuantity + item.amount;
+      });
+    }
+  }
+  $$unsubscribe_userCredentials();
+  $$unsubscribe_cart();
+  return `<div class="${"header-wrapper"}"><div class="${"header"}"><a sveltekit:prefetch href="${"/"}"><svg class="${"logo"}" viewBox="${"0 0 87 59"}" fill="${"none"}" xmlns="${"http://www.w3.org/2000/svg"}"><path d="${"M43.2363 57.815C54.9844 57.815 65.643 54.6413 73.3792 49.4839C81.1118 44.3288 85.9726 37.1522 85.9726 29.1575C85.9726 21.1628 81.1118 13.9862 73.3792 8.83112C65.643 3.67369 54.9844 0.5 43.2363 0.5C31.4881 0.5 20.8295 3.67369 13.0934 8.83112C5.36071 13.9862 0.5 21.1628 0.5 29.1575C0.5 37.1522 5.36071 44.3288 13.0934 49.4839C20.8295 54.6413 31.4881 57.815 43.2363 57.815Z"}" fill="${"#912338"}" stroke="${"white"}"></path><path fill-rule="${"evenodd"}" clip-rule="${"evenodd"}" d="${"M63.1448 16.8022H69.1107C71.2613 16.8022 75.5623 18.311 74.5564 22.2338L67.862 41.5464H60.6127L63.2488 33.9019H59.3987L56.381 41.5464H49.4438L57.7337 19.7192C58.7743 17.3051 62.1735 16.8022 63.1448 16.8022ZM65.5034 27.5984H61.8267L63.2488 23.7426C64.1853 21.8315 67.4805 22.6027 66.9602 23.7426L65.5034 27.5984Z"}" fill="${"white"}"></path><path d="${"M52.9817 23.2062L55.4445 16.7686L41.2926 16.8357C39.0727 16.8357 38.2055 17.1375 37.4077 18.9815L30.8868 35.8465C29.6728 39.6688 31.5458 41.58 33.8004 41.58H46.2527L51.5596 27.8332H44.1368L42.125 32.896H44.6224C44.9346 32.896 45.0387 33.1307 44.9693 33.2984L44.1021 35.3436C43.9287 35.6454 43.8246 35.746 43.4778 35.746H40.0092C39.5929 35.746 38.8299 35.2766 39.1767 34.1701L42.9922 24.2456C43.1656 23.7426 43.9287 23.2732 44.7958 23.2732L52.9817 23.2062Z"}" fill="${"white"}"></path><path d="${"M32.5867 23.1726L35.0494 16.7351L20.8975 16.8022C18.6776 16.8022 17.8105 17.1039 17.0127 18.948L10.4917 35.813C9.27773 39.6353 11.1508 41.5464 13.4054 41.5464H25.8576L28.1784 35.2095H19.1976C18.7467 35.2095 18.2264 34.8407 18.4132 34.3377L22.5971 24.212C22.7706 23.7091 23.5337 23.2397 24.4008 23.2397L32.5867 23.1726Z"}" fill="${"white"}"></path></svg></a>
+		<div class="${"nav"}">${$userCredentials.type.length == 0 ? `<a href="${"/signup"}"><p>Sign Up</p></a>
+				<a href="${"/login"}"><p>Login</p></a>` : `<a href="${"/"}"><p>Logout</p></a>`}
+
+			<a sveltekit:prefetch href="${"/aisles"}"><p>Aisles</p></a>
+			<a sveltekit:prefetch href="${"/cart"}"><svg class="${"cart-icon"}" viewBox="${"0 0 39 28"}" fill="${"none"}" xmlns="${"http://www.w3.org/2000/svg"}"><path d="${"M20.3624 15.4C21.412 15.4 22.3357 14.826 22.8115 13.958L27.8217 4.872C28.3395 3.948 27.6677 2.8 26.6041 2.8H5.89181L4.5763 0H0V2.8H2.79896L7.83709 13.426L5.94779 16.842C4.92617 18.718 6.26967 21 8.39688 21H25.1906V18.2H8.39688L9.93631 15.4H20.3624ZM7.22132 5.6H24.225L20.3624 12.6H10.5381L7.22132 5.6ZM8.39688 22.4C6.85745 22.4 5.61192 23.66 5.61192 25.2C5.61192 26.74 6.85745 28 8.39688 28C9.93631 28 11.1958 26.74 11.1958 25.2C11.1958 23.66 9.93631 22.4 8.39688 22.4ZM22.3917 22.4C20.8523 22.4 19.6067 23.66 19.6067 25.2C19.6067 26.74 20.8523 28 22.3917 28C23.9311 28 25.1906 26.74 25.1906 25.2C25.1906 23.66 23.9311 22.4 22.3917 22.4Z"}" fill="${"white"}"></path><circle cx="${"30"}" cy="${"16"}" r="${"8.5"}" fill="${"#912338"}" stroke="${"white"}"></circle><text${add_attribute("x", 28 - totalQuantity.toString().length * 2, 0)}${add_attribute("y", "21", 0)} fill="${"white"}"${add_attribute("style", `font-size: ${0.8 - totalQuantity.toString().length / 10}rem;`, 0)}>${escape2(totalQuantity)}</text></svg></a></div></div>
 </div>`;
 });
 var Footer = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `<div class="${"footer"}"><a href="${"/backstore/products/"}">This is an incredibly underdesigned footer which links to the backstore</a>
+  return `<div class="${"footer"}"><a sveltekit:prefetch href="${"/backstore/products/"}">This is an incredibly underdesigned footer which links to the backstore</a>
 </div>`;
 });
+var css$d = {
+  code: ".splash.svelte-9qakwn{position:absolute;width:70vw;z-index:-1;right:5rem;top:5rem}",
+  map: `{"version":3,"file":"__layout.svelte","sources":["__layout.svelte"],"sourcesContent":["<script context=\\"module\\">\\r\\n\\r\\n<\/script>\\r\\n\\r\\n<script>\\r\\n\\timport Header from '../components/header.svelte';\\r\\n\\timport Footer from '../components/footer.svelte';\\r\\n\\timport { onMount } from 'svelte';\\r\\n<\/script>\\r\\n\\r\\n<Header />\\r\\n<svg class=\\"splash\\" viewBox=\\"0 0 1437 511\\" fill=\\"none\\" xmlns=\\"http://www.w3.org/2000/svg\\">\\r\\n\\t<path d=\\"M1298.16 281.05C1317.24 281.05 1334.03 270.574 1342.68 254.734L1433.76 88.914C1443.17 72.051 1430.96 51.1 1411.62 51.1H1035.1L1011.19 0H928V51.1H978.881L1070.47 245.024L1036.12 307.366C1017.55 341.603 1041.97 383.25 1080.64 383.25H1385.93V332.15H1080.64L1108.63 281.05H1298.16ZM1059.27 102.2H1368.38L1298.16 229.95H1119.57L1059.27 102.2ZM1080.64 408.8C1052.66 408.8 1030.02 431.795 1030.02 459.9C1030.02 488.005 1052.66 511 1080.64 511C1108.63 511 1131.52 488.005 1131.52 459.9C1131.52 431.795 1108.63 408.8 1080.64 408.8ZM1335.05 408.8C1307.06 408.8 1284.42 431.795 1284.42 459.9C1284.42 488.005 1307.06 511 1335.05 511C1363.03 511 1385.93 488.005 1385.93 459.9C1385.93 431.795 1363.03 408.8 1335.05 408.8Z\\" fill=\\"url(#paint0_linear)\\"/>\\r\\n\\t<path d=\\"M0 123.5C0 106.655 13.6553 93 30.5 93H884.5C901.345 93 915 106.655 915 123.5C915 140.345 901.345 154 884.5 154H30.5C13.6553 154 0 140.345 0 123.5Z\\" fill=\\"url(#paint1_linear)\\"/>\\r\\n\\t<path d=\\"M198 227.5C198 210.103 212.103 196 229.5 196H923.5C940.897 196 955 210.103 955 227.5C955 244.897 940.897 259 923.5 259H229.5C212.103 259 198 244.897 198 227.5Z\\" fill=\\"url(#paint2_linear)\\"/>\\r\\n\\t<defs>\\r\\n\\t<linearGradient id=\\"paint0_linear\\" x1=\\"1.22093e-06\\" y1=\\"176\\" x2=\\"1437\\" y2=\\"178.5\\" gradientUnits=\\"userSpaceOnUse\\">\\r\\n\\t<stop stop-color=\\"#EEEEEE\\" stop-opacity=\\"0.2\\"/>\\r\\n\\t<stop offset=\\"1\\" stop-color=\\"#EEEEEE\\"/>\\r\\n\\t</linearGradient>\\r\\n\\t<linearGradient id=\\"paint1_linear\\" x1=\\"1.22093e-06\\" y1=\\"176\\" x2=\\"1437\\" y2=\\"178.5\\" gradientUnits=\\"userSpaceOnUse\\">\\r\\n\\t<stop stop-color=\\"#EEEEEE\\" stop-opacity=\\"0.2\\"/>\\r\\n\\t<stop offset=\\"1\\" stop-color=\\"#EEEEEE\\"/>\\r\\n\\t</linearGradient>\\r\\n\\t<linearGradient id=\\"paint2_linear\\" x1=\\"1.22093e-06\\" y1=\\"176\\" x2=\\"1437\\" y2=\\"178.5\\" gradientUnits=\\"userSpaceOnUse\\">\\r\\n\\t<stop stop-color=\\"#EEEEEE\\" stop-opacity=\\"0.2\\"/>\\r\\n\\t<stop offset=\\"1\\" stop-color=\\"#EEEEEE\\"/>\\r\\n\\t</linearGradient>\\r\\n\\t</defs>\\r\\n\\t</svg>\\r\\n\\t\\r\\n<slot />\\r\\n\\r\\n<Footer />\\r\\n\\r\\n<style lang=\\"scss\\">.splash {\\n  position: absolute;\\n  width: 70vw;\\n  z-index: -1;\\n  right: 5rem;\\n  top: 5rem;\\n}</style>\\r\\n"],"names":[],"mappings":"AAmCmB,OAAO,cAAC,CAAC,AAC1B,QAAQ,CAAE,QAAQ,CAClB,KAAK,CAAE,IAAI,CACX,OAAO,CAAE,EAAE,CACX,KAAK,CAAE,IAAI,CACX,GAAG,CAAE,IAAI,AACX,CAAC"}`
+};
 var _layout$1 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  $$result.css.add(css$d);
   return `${validate_component(Header, "Header").$$render($$result, {}, {}, {})}
-
+<svg class="${"splash svelte-9qakwn"}" viewBox="${"0 0 1437 511"}" fill="${"none"}" xmlns="${"http://www.w3.org/2000/svg"}"><path d="${"M1298.16 281.05C1317.24 281.05 1334.03 270.574 1342.68 254.734L1433.76 88.914C1443.17 72.051 1430.96 51.1 1411.62 51.1H1035.1L1011.19 0H928V51.1H978.881L1070.47 245.024L1036.12 307.366C1017.55 341.603 1041.97 383.25 1080.64 383.25H1385.93V332.15H1080.64L1108.63 281.05H1298.16ZM1059.27 102.2H1368.38L1298.16 229.95H1119.57L1059.27 102.2ZM1080.64 408.8C1052.66 408.8 1030.02 431.795 1030.02 459.9C1030.02 488.005 1052.66 511 1080.64 511C1108.63 511 1131.52 488.005 1131.52 459.9C1131.52 431.795 1108.63 408.8 1080.64 408.8ZM1335.05 408.8C1307.06 408.8 1284.42 431.795 1284.42 459.9C1284.42 488.005 1307.06 511 1335.05 511C1363.03 511 1385.93 488.005 1385.93 459.9C1385.93 431.795 1363.03 408.8 1335.05 408.8Z"}" fill="${"url(#paint0_linear)"}"></path><path d="${"M0 123.5C0 106.655 13.6553 93 30.5 93H884.5C901.345 93 915 106.655 915 123.5C915 140.345 901.345 154 884.5 154H30.5C13.6553 154 0 140.345 0 123.5Z"}" fill="${"url(#paint1_linear)"}"></path><path d="${"M198 227.5C198 210.103 212.103 196 229.5 196H923.5C940.897 196 955 210.103 955 227.5C955 244.897 940.897 259 923.5 259H229.5C212.103 259 198 244.897 198 227.5Z"}" fill="${"url(#paint2_linear)"}"></path><defs><linearGradient id="${"paint0_linear"}" x1="${"1.22093e-06"}" y1="${"176"}" x2="${"1437"}" y2="${"178.5"}" gradientUnits="${"userSpaceOnUse"}"><stop stop-color="${"#EEEEEE"}" stop-opacity="${"0.2"}"></stop><stop offset="${"1"}" stop-color="${"#EEEEEE"}"></stop></linearGradient><linearGradient id="${"paint1_linear"}" x1="${"1.22093e-06"}" y1="${"176"}" x2="${"1437"}" y2="${"178.5"}" gradientUnits="${"userSpaceOnUse"}"><stop stop-color="${"#EEEEEE"}" stop-opacity="${"0.2"}"></stop><stop offset="${"1"}" stop-color="${"#EEEEEE"}"></stop></linearGradient><linearGradient id="${"paint2_linear"}" x1="${"1.22093e-06"}" y1="${"176"}" x2="${"1437"}" y2="${"178.5"}" gradientUnits="${"userSpaceOnUse"}"><stop stop-color="${"#EEEEEE"}" stop-opacity="${"0.2"}"></stop><stop offset="${"1"}" stop-color="${"#EEEEEE"}"></stop></linearGradient></defs></svg>
+	
 ${slots.default ? slots.default({}) : ``}
 
 ${validate_component(Footer, "Footer").$$render($$result, {}, {}, {})}`;
@@ -13776,7 +16590,7 @@ var __layout$1 = /* @__PURE__ */ Object.freeze({
   [Symbol.toStringTag]: "Module",
   "default": _layout$1
 });
-function load$2({ error: error22, status }) {
+function load$8({ error: error22, status }) {
   return { props: { error: error22, status } };
 }
 var Error$1 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
@@ -13799,157 +16613,141 @@ var error2 = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module",
   "default": Error$1,
-  load: load$2
+  load: load$8
 });
 var Productcard = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let { product } = $$props;
   if ($$props.product === void 0 && $$bindings.product && product !== void 0)
     $$bindings.product(product);
-  return `<div class="${"p-card"}"><img${add_attribute("src", "/" + product.image, 0)}${add_attribute("alt", product.name, 0)} class="${"bg-image"}">
-  <div class="${"image-gradient"}"></div>
-  <div class="${"text"}"><h2 class="${"name"}">${escape2(product.name)}</h2>
-    ${product.rebate != 0 ? `<p class="${"rebate-price"}">${escape2("$" + (product.price - product.rebate))}</p>` : `<div class="${"empty"}"></div>`}
-    <a${add_attribute("href", "/products/" + product.name.split(" ").join("-"), 0)} class="${"learn-more"}">Learn More</a>
-    <h2 class="${"price"}">${escape2("$" + product.price)}</h2></div>
+  return `<div class="${"p-card"}"><div class="${"img-container"}"><picture><source srcset="${"/" + escape2(product.image) + "-240.webp, /" + escape2(product.image) + "-400.webp 2x"}" media="${"(max-width:360px)"}" type="${"image/webp"}">
+			<source srcset="${"/" + escape2(product.image) + "-240.jpg, /" + escape2(product.image) + "-400.jpg 2x"}" media="${"(max-width:360px)"}" type="${"image/jpeg"}">
+			<source srcset="${"/" + escape2(product.image) + "-400.webp, /" + escape2(product.image) + "-800.webp 2x"}" media="${"(max-width:600px)"}" type="${"image/webp"}">
+			<source srcset="${"/" + escape2(product.image) + "-400.jpg, /" + escape2(product.image) + "-800.jpg 2x"}" media="${"(max-width:600px)"}" type="${"image/jpeg"}">
+			<source srcset="${"/" + escape2(product.image) + "-600.webp"}" media="${"(max-width:864px)"}" type="${"image/webp"}">
+			<source srcset="${"/" + escape2(product.image) + "-600.jpg"}" media="${"(max-width:864px)"}" type="${"image/jpeg"}">
+			<source srcset="${"/" + escape2(product.image) + "-800.webp"}" media="${"(max-width:1280px)"}" type="${"image/webp"}">
+			<source srcset="${"/" + escape2(product.image) + "-800.jpg"}" media="${"(max-width:1280px)"}" type="${"image/jpeg"}">
+			<source srcset="${"/" + escape2(product.image) + "-400.webp"}" type="${"image/webp"}">
+			<source srcset="${"/" + escape2(product.image) + "-400.jpg"}" type="${"image/jpeg"}">
+			<img src="${"/" + escape2(product.image) + "-400.jpg"}" alt="${"hi:)"}" class="${"bg-image"}"></picture></div>
+
+	<div class="${"image-gradient"}"></div>
+	<div class="${"text"}"><h2 class="${"name"}">${escape2(product.name)}</h2>
+		${product.rebate != 0 ? `<p class="${"rebate-price"}">${escape2("$" + product.price)}</p>` : `<div class="${"empty"}"></div>`}
+		<a sveltekit:prefetch${add_attribute("href", "/products/" + product.name.split(" ").join("-"), 0)} class="${"learn-more"}">Learn More</a>
+		<h2 class="${"price"}">${escape2("$" + (product.price - product.rebate).toFixed(2))}</h2></div>
 </div>`;
 });
-var productList = [
-  {
-    name: "Strawberries",
-    description: "Organic strawberries, 0.5kg",
-    origin: "Ontario",
-    price: 4.49,
-    rebate: 0,
-    quantity: 100,
-    image: "strawberries.jpg",
-    aisle: "Fruits"
-  },
-  {
-    name: "Blueberries",
-    description: "Organic blueberries, 0.5kg",
-    origin: "Quebec",
-    price: 3.49,
-    rebate: 0,
-    quantity: 100,
-    image: "blueberries.jpg",
-    aisle: "Fruits"
-  },
-  {
-    name: "Raspberries",
-    description: "Organic raspberries, 0.5kg",
-    origin: "Quebec",
-    price: 5.99,
-    rebate: 1,
-    image: "raspberries.jpg",
-    quantity: 100,
-    aisle: "Fruits"
-  },
-  {
-    name: "Watermelon",
-    description: "Organic watermelon, 1 unit",
-    origin: "Ontario",
-    price: 6.49,
-    rebate: 0,
-    quantity: 100,
-    image: "watermelon.jpg",
-    aisle: "Fruits"
-  },
-  {
-    name: "Cucumber",
-    description: "Organic cucumber, 1 unit",
-    origin: "Quebec",
-    price: 1.49,
-    rebate: 0,
-    quantity: 100,
-    image: "cucumber.jpg",
-    aisle: "Vegetables"
-  },
-  {
-    name: "Tomato",
-    description: "Organic tomato, 1 unit",
-    origin: "Quebec",
-    price: 2.49,
-    rebate: 0,
-    quantity: 100,
-    image: "tomato.jpg",
-    aisle: "Vegetables"
-  },
-  {
-    name: "Peas",
-    description: "Bag of peas, 1kg",
-    origin: "Quebec",
-    price: 3.49,
-    rebate: 0,
-    quantity: 100,
-    image: "peas.jpg",
-    aisle: "Vegetables"
-  },
-  {
-    name: "Steak",
-    description: "Uncooked, fresh cut steak. 2kg ",
-    origin: "Quebec",
-    price: 7.99,
-    rebate: 0,
-    quantity: 100,
-    image: "steak.jpg",
-    aisle: "Meat"
-  },
-  {
-    name: "Salami",
-    description: "A very very long salami. 10kg ",
-    origin: "Quebec",
-    price: 31.99,
-    rebate: 0,
-    quantity: 5,
-    image: "salami.jpg",
-    aisle: "Meat"
-  },
-  {
-    name: "Milk",
-    description: "Milky milky 2% milk. 2L",
-    origin: "Quebec",
-    price: 3.99,
-    rebate: 0,
-    quantity: 100,
-    image: "milk.jpg",
-    aisle: "Dairy"
-  }
-];
-var productList$1 = {
-  productList
+var css$c = {
+  code: ".home-wrapper.svelte-64tu2b.svelte-64tu2b{padding-bottom:0}.aisles-wrapper.svelte-64tu2b.svelte-64tu2b{border-bottom:0.1rem var(--main-color) solid}.aisle-preview.svelte-64tu2b.svelte-64tu2b{width:100%;position:relative;z-index:-1;border-top:0.1rem var(--main-color) solid;background:var(--main-color);display:flex;flex-direction:column;align-items:center}.aisle-preview.svelte-64tu2b.svelte-64tu2b:nth-of-type(1){box-shadow:0 -0.25rem 0.5rem rgba(0, 0, 0, 0.15)}.aisle-preview.svelte-64tu2b .bg.svelte-64tu2b{position:absolute;width:100%;height:100%;z-index:-1}.aisle-preview.svelte-64tu2b .bg img.svelte-64tu2b{height:100%;width:100%;object-fit:cover;object-position:fixed;filter:brightness(0.5)}.aisle-preview.svelte-64tu2b .aisle-name.svelte-64tu2b{font-size:2rem;font-weight:700;-webkit-text-stroke-width:0.05rem;-webkit-text-stroke-color:white;text-align:center;margin-top:1.5rem;margin-bottom:1.5rem}.aisle-preview.svelte-64tu2b .aisle-products.svelte-64tu2b{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:1rem;max-width:80vw;margin-bottom:2rem}.aisle-preview.svelte-64tu2b .aisle-products .product-box.svelte-64tu2b{border:0.25rem solid white;background-color:white;display:flex;flex-direction:column;box-shadow:0 0.1rem 0.5rem rgb(0, 0, 0)}.aisle-preview.svelte-64tu2b .aisle-products .product-box .img-container.svelte-64tu2b{position:relative;height:0;padding-top:100%;width:8rem}.aisle-preview.svelte-64tu2b .aisle-products .product-box .img-container img.svelte-64tu2b{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}.aisle-preview.svelte-64tu2b .aisle-products .product-box a.svelte-64tu2b{background:white;width:100%;color:black}.aisle-preview.svelte-64tu2b .aisle-products .clear-box.svelte-64tu2b{border:0.25rem solid white;background-color:rgba(255, 255, 255, 0.514);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0.1rem 0.5rem rgb(0, 0, 0)}.aisle-preview.svelte-64tu2b .aisle-products .clear-box .more.svelte-64tu2b{width:8rem;text-align:center;font-size:1.5rem;font-weight:700;color:black;text-decoration-color:black}",
+  map: `{"version":3,"file":"index.svelte","sources":["index.svelte"],"sourcesContent":["<script context=\\"module\\">\\n\\texport const load = async ({ fetch }) => {\\n\\t\\tconst res = await fetch('/api/productlist')\\n\\t\\t\\t.then((response) => response.json())\\n\\t\\t\\t.then((json) => {\\n\\t\\t\\t\\treturn json;\\n\\t\\t\\t});\\n\\t\\tconst data = await res;\\n\\t\\tlet productList = [];\\n\\t\\tdata.data.forEach((product) => {\\n\\t\\t\\tproductList.push(product.data);\\n\\t\\t});\\n\\t\\treturn {\\n\\t\\t\\tprops: { productList: productList }\\n\\t\\t};\\n\\t};\\n<\/script>\\n\\n<script>\\n\\timport ProductCard from '../components/productcard.svelte';\\n\\texport let productList\\n\\tlet aisles = [\\n\\t\\t{ name: 'Fruits', image: 'strawberries', products: [] },\\n\\t\\t{ name: 'Vegetables', image: 'cucumber', products: [] },\\n\\t\\t{ name: 'Meats', image: 'steak', products: [] },\\n\\t\\t{ name: 'Dairy', image: 'milk', products: [] }\\n\\t];\\n\\tproductList.forEach((product) => {\\n\\t\\tswitch (product.aisle) {\\n\\t\\t\\tcase 'Fruits':\\n\\t\\t\\t\\tif (aisles[0].products.length != 3) {\\n\\t\\t\\t\\t\\taisles[0].products.push(product);\\n\\t\\t\\t\\t}\\n\\n\\t\\t\\t\\tbreak;\\n\\t\\t\\tcase 'Vegetables':\\n\\t\\t\\t\\tif (aisles[1].products.length != 3) {\\n\\t\\t\\t\\t\\taisles[1].products.push(product);\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tbreak;\\n\\t\\t\\tcase 'Meats':\\n\\t\\t\\t\\tif (aisles[2].products.length != 3) {\\n\\t\\t\\t\\t\\taisles[2].products.push(product);\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tbreak;\\n\\t\\t\\tcase 'Dairy':\\n\\t\\t\\t\\tif (aisles[3].products.length != 3) {\\n\\t\\t\\t\\t\\taisles[3].products.push(product);\\n\\t\\t\\t\\t}\\n\\t\\t\\t\\tbreak;\\n\\t\\t}\\n\\t});\\n\\tlet products = productList.slice(0, 3);\\n<\/script>\\n\\n<div class=\\"home-wrapper\\">\\n\\t<div class=\\"banner\\">\\n\\t\\t\\n\\t\\t\\t\\n\\t\\t<h1>Welcome to CGA \u{1F3EA}<br />Here are today\u2019s deals:</h1>\\n\\t\\t<div class=\\"products\\">\\n\\t\\t\\t{#each products as product}\\n\\t\\t\\t\\t<ProductCard {product} />\\n\\t\\t\\t{/each}\\n\\t\\t</div>\\n\\t</div>\\n\\t<div class=\\"aisles-wrapper\\">\\n\\t\\t<h1>Aisles</h1>\\n\\t\\t{#each aisles as aisle}\\n\\t\\t\\t<div class=\\"aisle-preview\\">\\n\\t\\t\\t\\t<div class=\\"bg\\">\\n\\t\\t\\t\\t\\t<picture>\\n\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-400.webp, /{aisle.products[0].image}-800.webp 2x\\"\\n\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:400px)\\"\\n\\t\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\n\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-400.jpg, /{aisle.products[0].image}-800.jpg 2x\\"\\n\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:400px)\\"\\n\\t\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\n\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-600.webp, /{aisle.products[0].image}-1200.webp 2x\\"\\n\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:600px)\\"\\n\\t\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\n\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-600.jpg, /{aisle.products[0].image}-1200.jpg 2x\\"\\n\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:600px)\\"\\n\\t\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\n\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-800.webp\\"\\n\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:800px)\\"\\n\\t\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\n\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-800.jpg\\"\\n\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:800px)\\"\\n\\t\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\n\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t<source srcset=\\"/{aisle.products[0].image}-1200.webp\\" type=\\"image/webp\\" />\\n\\t\\t\\t\\t\\t\\t<source srcset=\\"/{aisle.products[0].image}-1200.jpg\\" type=\\"image/jpeg\\" />\\n\\t\\t\\t\\t\\t\\t<img src=\\"/{aisle.products[0].image}-400.jpg\\" alt=\\"hi:)\\" class=\\"bg-image\\" />\\n\\t\\t\\t\\t\\t</picture>\\n\\t\\t\\t\\t</div>\\n\\t\\t\\t\\t<p class=\\"aisle-name\\">\\n\\t\\t\\t\\t\\t{aisle.name}\\n\\t\\t\\t\\t</p>\\n\\t\\t\\t\\t<div class=\\"aisle-products\\">\\n\\t\\t\\t\\t\\t{#each aisle.products as product}\\n\\t\\t\\t\\t\\t\\t<div class=\\"product-box\\">\\n\\t\\t\\t\\t\\t\\t\\t<div class=\\"img-container\\">\\n\\t\\t\\t\\t\\t\\t\\t\\t<picture>\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-120.webp, /{product.image}-240.webp 2x\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:800px)\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-120.jpg, /{product.image}-240.jpg 2x\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:800px)\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-240.webp, /{product.image}-400.webp 2x\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t<source\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-240.jpg, /{product.image}-400.jpg 2x\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t/>\\n\\t\\t\\t\\t\\t\\t\\t\\t\\t<img src=\\"/{product.image}-240.jpg\\" alt=\\"hi:)\\" class=\\"bg-image\\" />\\n\\t\\t\\t\\t\\t\\t\\t\\t</picture>\\n\\t\\t\\t\\t\\t\\t\\t</div>\\n\\t\\t\\t\\t\\t\\t\\t<a sveltekit:prefetch href=\\"/products/{product.name}\\">{product.name}</a>\\n\\t\\t\\t\\t\\t\\t</div>\\n\\t\\t\\t\\t\\t{/each}\\n\\t\\t\\t\\t\\t<div class=\\"clear-box\\">\\n\\t\\t\\t\\t\\t\\t<a sveltekit:prefetch href=\\"/aisles/{aisle.name}\\" class=\\"more\\">More</a>\\n\\t\\t\\t\\t\\t</div>\\n\\t\\t\\t\\t</div>\\n\\t\\t\\t</div>\\n\\t\\t{/each}\\n\\t</div>\\n</div>\\n\\n<style>\\n\\t.home-wrapper{\\n\\t\\tpadding-bottom: 0;\\n\\t}\\n\\t.aisles-wrapper {\\n\\t\\tborder-bottom: 0.1rem var(--main-color) solid;\\n\\t}\\n\\t.aisle-preview {\\n\\t\\twidth: 100%;\\n\\t\\tposition: relative;\\n\\t\\tz-index: -1;\\n\\t\\tborder-top: 0.1rem var(--main-color) solid;\\n\\t\\tbackground: var(--main-color);\\n\\t\\tdisplay: flex;\\n\\t\\tflex-direction: column;\\n\\t\\talign-items: center;\\n\\t}\\n\\t.aisle-preview:nth-of-type(1) {\\n\\t\\tbox-shadow: 0 -0.25rem 0.5rem rgba(0, 0, 0, 0.15);\\n\\t}\\n\\t.aisle-preview .bg {\\n\\t\\tposition: absolute;\\n\\t\\twidth: 100%;\\n\\t\\theight: 100%;\\n\\t\\tz-index: -1;\\n\\t}\\n\\t.aisle-preview .bg img {\\n\\t\\theight: 100%;\\n\\t\\twidth: 100%;\\n\\t\\tobject-fit: cover;\\n\\t\\tobject-position: fixed;\\n\\t\\tfilter: brightness(0.5);\\n\\t}\\n\\t.aisle-preview .aisle-name {\\n\\t\\tfont-size: 2rem;\\n\\t\\tfont-weight: 700;\\n\\t\\t-webkit-text-stroke-width: 0.05rem;\\n\\t\\t-webkit-text-stroke-color: white;\\n\\t\\ttext-align: center;\\n\\t\\tmargin-top: 1.5rem;\\n\\t\\tmargin-bottom: 1.5rem;\\n\\t}\\n\\t.aisle-preview .aisle-products {\\n\\t\\tdisplay: flex;\\n\\t\\tflex-direction: row;\\n\\t\\tflex-wrap: wrap;\\n\\t\\tjustify-content: center;\\n\\t\\tgap: 1rem;\\n\\t\\tmax-width: 80vw;\\n\\t\\tmargin-bottom: 2rem;\\n\\t}\\n\\t.aisle-preview .aisle-products .product-box {\\n\\t\\tborder: 0.25rem solid white;\\n\\t\\tbackground-color: white;\\n\\t\\tdisplay: flex;\\n\\t\\tflex-direction: column;\\n\\t\\tbox-shadow: 0 0.1rem 0.5rem rgb(0, 0, 0);\\n\\t}\\n\\t.aisle-preview .aisle-products .product-box .img-container {\\n\\t\\tposition: relative;\\n\\t\\theight: 0;\\n\\t\\tpadding-top: 100%;\\n\\t\\twidth: 8rem;\\n\\t}\\n\\t.aisle-preview .aisle-products .product-box .img-container img {\\n\\t\\tposition: absolute;\\n\\t\\ttop: 0;\\n\\t\\tleft: 0;\\n\\t\\twidth: 100%;\\n\\t\\theight: 100%;\\n\\t\\tobject-fit: cover;\\n\\t}\\n\\t.aisle-preview .aisle-products .product-box a {\\n\\t\\tbackground: white;\\n\\t\\twidth: 100%;\\n\\t\\tcolor: black;\\n\\t}\\n\\t.aisle-preview .aisle-products .clear-box {\\n\\t\\tborder: 0.25rem solid white;\\n\\t\\tbackground-color: rgba(255, 255, 255, 0.514);\\n\\t\\tbackdrop-filter: blur(4px);\\n\\t\\tdisplay: flex;\\n\\t\\tflex-direction: column;\\n\\t\\talign-items: center;\\n\\t\\tjustify-content: center;\\n\\t\\tbox-shadow: 0 0.1rem 0.5rem rgb(0, 0, 0);\\n\\t}\\n\\t.aisle-preview .aisle-products .clear-box .more {\\n\\t\\twidth: 8rem;\\n\\t\\ttext-align: center;\\n\\t\\tfont-size: 1.5rem;\\n\\t\\tfont-weight: 700;\\n\\t\\tcolor: black;\\n\\t\\ttext-decoration-color: black;\\n\\t}\\n\\n</style>\\n"],"names":[],"mappings":"AAqJC,yCAAa,CAAC,AACb,cAAc,CAAE,CAAC,AAClB,CAAC,AACD,eAAe,4BAAC,CAAC,AAChB,aAAa,CAAE,MAAM,CAAC,IAAI,YAAY,CAAC,CAAC,KAAK,AAC9C,CAAC,AACD,cAAc,4BAAC,CAAC,AACf,KAAK,CAAE,IAAI,CACX,QAAQ,CAAE,QAAQ,CAClB,OAAO,CAAE,EAAE,CACX,UAAU,CAAE,MAAM,CAAC,IAAI,YAAY,CAAC,CAAC,KAAK,CAC1C,UAAU,CAAE,IAAI,YAAY,CAAC,CAC7B,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,WAAW,CAAE,MAAM,AACpB,CAAC,AACD,0CAAc,aAAa,CAAC,CAAC,AAAC,CAAC,AAC9B,UAAU,CAAE,CAAC,CAAC,QAAQ,CAAC,MAAM,CAAC,KAAK,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,IAAI,CAAC,AAClD,CAAC,AACD,4BAAc,CAAC,GAAG,cAAC,CAAC,AACnB,QAAQ,CAAE,QAAQ,CAClB,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,IAAI,CACZ,OAAO,CAAE,EAAE,AACZ,CAAC,AACD,4BAAc,CAAC,GAAG,CAAC,GAAG,cAAC,CAAC,AACvB,MAAM,CAAE,IAAI,CACZ,KAAK,CAAE,IAAI,CACX,UAAU,CAAE,KAAK,CACjB,eAAe,CAAE,KAAK,CACtB,MAAM,CAAE,WAAW,GAAG,CAAC,AACxB,CAAC,AACD,4BAAc,CAAC,WAAW,cAAC,CAAC,AAC3B,SAAS,CAAE,IAAI,CACf,WAAW,CAAE,GAAG,CAChB,yBAAyB,CAAE,OAAO,CAClC,yBAAyB,CAAE,KAAK,CAChC,UAAU,CAAE,MAAM,CAClB,UAAU,CAAE,MAAM,CAClB,aAAa,CAAE,MAAM,AACtB,CAAC,AACD,4BAAc,CAAC,eAAe,cAAC,CAAC,AAC/B,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,GAAG,CACnB,SAAS,CAAE,IAAI,CACf,eAAe,CAAE,MAAM,CACvB,GAAG,CAAE,IAAI,CACT,SAAS,CAAE,IAAI,CACf,aAAa,CAAE,IAAI,AACpB,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,YAAY,cAAC,CAAC,AAC5C,MAAM,CAAE,OAAO,CAAC,KAAK,CAAC,KAAK,CAC3B,gBAAgB,CAAE,KAAK,CACvB,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,UAAU,CAAE,CAAC,CAAC,MAAM,CAAC,MAAM,CAAC,IAAI,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,AACzC,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,YAAY,CAAC,cAAc,cAAC,CAAC,AAC3D,QAAQ,CAAE,QAAQ,CAClB,MAAM,CAAE,CAAC,CACT,WAAW,CAAE,IAAI,CACjB,KAAK,CAAE,IAAI,AACZ,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,YAAY,CAAC,cAAc,CAAC,GAAG,cAAC,CAAC,AAC/D,QAAQ,CAAE,QAAQ,CAClB,GAAG,CAAE,CAAC,CACN,IAAI,CAAE,CAAC,CACP,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,IAAI,CACZ,UAAU,CAAE,KAAK,AAClB,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,YAAY,CAAC,CAAC,cAAC,CAAC,AAC9C,UAAU,CAAE,KAAK,CACjB,KAAK,CAAE,IAAI,CACX,KAAK,CAAE,KAAK,AACb,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,UAAU,cAAC,CAAC,AAC1C,MAAM,CAAE,OAAO,CAAC,KAAK,CAAC,KAAK,CAC3B,gBAAgB,CAAE,KAAK,GAAG,CAAC,CAAC,GAAG,CAAC,CAAC,GAAG,CAAC,CAAC,KAAK,CAAC,CAC5C,eAAe,CAAE,KAAK,GAAG,CAAC,CAC1B,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,WAAW,CAAE,MAAM,CACnB,eAAe,CAAE,MAAM,CACvB,UAAU,CAAE,CAAC,CAAC,MAAM,CAAC,MAAM,CAAC,IAAI,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,AACzC,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,UAAU,CAAC,KAAK,cAAC,CAAC,AAChD,KAAK,CAAE,IAAI,CACX,UAAU,CAAE,MAAM,CAClB,SAAS,CAAE,MAAM,CACjB,WAAW,CAAE,GAAG,CAChB,KAAK,CAAE,KAAK,CACZ,qBAAqB,CAAE,KAAK,AAC7B,CAAC"}`
+};
+var load$7 = async ({ fetch: fetch2 }) => {
+  const res = await fetch2("/api/productlist").then((response) => response.json()).then((json) => {
+    return json;
+  });
+  const data = await res;
+  let productList = [];
+  data.data.forEach((product) => {
+    productList.push(product.data);
+  });
+  return { props: { productList } };
 };
 var Routes = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let products = productList$1.productList.slice(0, 3);
+  let { productList } = $$props;
   let aisles = [
     {
       name: "Fruits",
-      image: "strawberries.jpg"
+      image: "strawberries",
+      products: []
     },
     {
       name: "Vegetables",
-      image: "cucumber.jpg"
+      image: "cucumber",
+      products: []
     },
-    { name: "Meat", image: "steak.jpg" },
-    { name: "Dairy", image: "milk.jpg" }
+    {
+      name: "Meats",
+      image: "steak",
+      products: []
+    },
+    {
+      name: "Dairy",
+      image: "milk",
+      products: []
+    }
   ];
-  return `<div class="${"home-wrapper"}"><div class="${"banner"}"><h1>Today\u2019s Featured Products</h1>
+  productList.forEach((product) => {
+    switch (product.aisle) {
+      case "Fruits":
+        if (aisles[0].products.length != 3) {
+          aisles[0].products.push(product);
+        }
+        break;
+      case "Vegetables":
+        if (aisles[1].products.length != 3) {
+          aisles[1].products.push(product);
+        }
+        break;
+      case "Meats":
+        if (aisles[2].products.length != 3) {
+          aisles[2].products.push(product);
+        }
+        break;
+      case "Dairy":
+        if (aisles[3].products.length != 3) {
+          aisles[3].products.push(product);
+        }
+        break;
+    }
+  });
+  let products = productList.slice(0, 3);
+  if ($$props.productList === void 0 && $$bindings.productList && productList !== void 0)
+    $$bindings.productList(productList);
+  $$result.css.add(css$c);
+  return `<div class="${"home-wrapper svelte-64tu2b"}"><div class="${"banner"}"><h1>Welcome to CGA \u{1F3EA}<br>Here are today\u2019s deals:</h1>
 		<div class="${"products"}">${each(products, (product) => `${validate_component(Productcard, "ProductCard").$$render($$result, { product }, {}, {})}`)}</div></div>
-	<div class="${"aisles-wrapper"}"><h1>Aisles</h1>
-		<div class="${"aisles"}">${each(aisles, (aisle) => `<a${add_attribute("href", "/aisles/" + aisle.name, 0)}><img${add_attribute("src", aisle.image, 0)}${add_attribute("alt", aisle.name, 0)}>
-					<h2>${escape2(aisle.name)}</h2>
-				</a>`)}</div></div>
+	<div class="${"aisles-wrapper svelte-64tu2b"}"><h1>Aisles</h1>
+		${each(aisles, (aisle) => `<div class="${"aisle-preview svelte-64tu2b"}"><div class="${"bg svelte-64tu2b"}"><picture><source srcset="${"/" + escape2(aisle.products[0].image) + "-400.webp, /" + escape2(aisle.products[0].image) + "-800.webp 2x"}" media="${"(max-width:400px)"}" type="${"image/webp"}">
+						<source srcset="${"/" + escape2(aisle.products[0].image) + "-400.jpg, /" + escape2(aisle.products[0].image) + "-800.jpg 2x"}" media="${"(max-width:400px)"}" type="${"image/jpeg"}">
+						<source srcset="${"/" + escape2(aisle.products[0].image) + "-600.webp, /" + escape2(aisle.products[0].image) + "-1200.webp 2x"}" media="${"(max-width:600px)"}" type="${"image/webp"}">
+						<source srcset="${"/" + escape2(aisle.products[0].image) + "-600.jpg, /" + escape2(aisle.products[0].image) + "-1200.jpg 2x"}" media="${"(max-width:600px)"}" type="${"image/jpeg"}">
+						<source srcset="${"/" + escape2(aisle.products[0].image) + "-800.webp"}" media="${"(max-width:800px)"}" type="${"image/webp"}">
+						<source srcset="${"/" + escape2(aisle.products[0].image) + "-800.jpg"}" media="${"(max-width:800px)"}" type="${"image/jpeg"}">
+						<source srcset="${"/" + escape2(aisle.products[0].image) + "-1200.webp"}" type="${"image/webp"}">
+						<source srcset="${"/" + escape2(aisle.products[0].image) + "-1200.jpg"}" type="${"image/jpeg"}">
+						<img src="${"/" + escape2(aisle.products[0].image) + "-400.jpg"}" alt="${"hi:)"}" class="${"bg-image svelte-64tu2b"}">
+					</picture></div>
+				<p class="${"aisle-name svelte-64tu2b"}">${escape2(aisle.name)}</p>
+				<div class="${"aisle-products svelte-64tu2b"}">${each(aisle.products, (product) => `<div class="${"product-box svelte-64tu2b"}"><div class="${"img-container svelte-64tu2b"}"><picture><source srcset="${"/" + escape2(product.image) + "-120.webp, /" + escape2(product.image) + "-240.webp 2x"}" media="${"(max-width:800px)"}" type="${"image/webp"}">
+									<source srcset="${"/" + escape2(product.image) + "-120.jpg, /" + escape2(product.image) + "-240.jpg 2x"}" media="${"(max-width:800px)"}" type="${"image/jpeg"}">
+									<source srcset="${"/" + escape2(product.image) + "-240.webp, /" + escape2(product.image) + "-400.webp 2x"}" type="${"image/webp"}">
+									<source srcset="${"/" + escape2(product.image) + "-240.jpg, /" + escape2(product.image) + "-400.jpg 2x"}" type="${"image/jpeg"}">
+									<img src="${"/" + escape2(product.image) + "-240.jpg"}" alt="${"hi:)"}" class="${"bg-image svelte-64tu2b"}">
+								</picture></div>
+							<a sveltekit:prefetch href="${"/products/" + escape2(product.name)}" class="${"svelte-64tu2b"}">${escape2(product.name)}</a>
+						</div>`)}
+					<div class="${"clear-box svelte-64tu2b"}"><a sveltekit:prefetch href="${"/aisles/" + escape2(aisle.name)}" class="${"more svelte-64tu2b"}">More</a>
+					</div></div>
+			</div>`)}</div>
 </div>`;
 });
 var index$5 = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module",
-  "default": Routes
+  "default": Routes,
+  load: load$7
 });
+var css$b = {
+  code: "h1.svelte-6hhv5x{text-align:center}",
+  map: '{"version":3,"file":"__layout.svelte","sources":["__layout.svelte"],"sourcesContent":["<h1>Super Secret Backstore</h1>\\r\\n<div class=\\"backstore-nav-wrapper\\">\\r\\n  <div class=\\"nav\\">\\r\\n    <a sveltekit:prefetch href=\\"/backstore/products/\\">Product List</a>\\r\\n    <a sveltekit:prefetch href=\\"/backstore/users/\\">User List</a>\\r\\n    <a sveltekit:prefetch class=\\"orders\\" href=\\"/backstore/orders/\\">Order List</a>\\r\\n  </div>\\r\\n</div>\\r\\n\\r\\n<div class=\\"grey-bg\\"><slot /></div>\\r\\n\\r\\n<style>\\r\\n  h1{\\r\\n    text-align: center;\\r\\n  }\\r\\n</style>\\r\\n"],"names":[],"mappings":"AAYE,gBAAE,CAAC,AACD,UAAU,CAAE,MAAM,AACpB,CAAC"}'
+};
 var _layout = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `<h1>Super Secret Backstore</h1>
-<div class="${"backstore-nav-wrapper"}"><div class="${"nav"}"><a href="${"/backstore/products/"}">Product List</a>
-    <a href="${"/backstore/users/"}">User List</a>
-    <a class="${"orders"}" href="${"/backstore/orders/"}">Order List</a></div></div>
+  $$result.css.add(css$b);
+  return `<h1 class="${"svelte-6hhv5x"}">Super Secret Backstore</h1>
+<div class="${"backstore-nav-wrapper"}"><div class="${"nav"}"><a sveltekit:prefetch href="${"/backstore/products/"}">Product List</a>
+    <a sveltekit:prefetch href="${"/backstore/users/"}">User List</a>
+    <a sveltekit:prefetch class="${"orders"}" href="${"/backstore/orders/"}">Order List</a></div></div>
 
 <div class="${"grey-bg"}">${slots.default ? slots.default({}) : ``}</div>`;
 });
@@ -13958,29 +16756,258 @@ var __layout = /* @__PURE__ */ Object.freeze({
   [Symbol.toStringTag]: "Module",
   "default": _layout
 });
+var css$a = {
+  code: "h1.svelte-1gcboyt.svelte-1gcboyt{text-align:center}.unauthorized.svelte-1gcboyt.svelte-1gcboyt{text-align:center}.productList.svelte-1gcboyt.svelte-1gcboyt{display:grid;max-width:80vw;margin:auto;grid-template-columns:repeat(auto-fit, minmax(15rem, 1fr));gap:1rem 1rem;margin-top:2rem;align-content:center;justify-items:center}.productList.svelte-1gcboyt .elem.svelte-1gcboyt{display:flex;width:100%;border:1px solid #cecece}.productList.svelte-1gcboyt .elem img.svelte-1gcboyt{height:100%;width:4rem;object-fit:cover}.productList.svelte-1gcboyt .elem .text.svelte-1gcboyt{display:flex;flex-direction:column;justify-content:space-evenly;margin-left:1rem;width:100%}.productList.svelte-1gcboyt .elem .text .action.svelte-1gcboyt{cursor:pointer}.productList.svelte-1gcboyt .new.svelte-1gcboyt{justify-content:center;align-items:center}",
+  map: `{"version":3,"file":"index.svelte","sources":["index.svelte"],"sourcesContent":["<script context=\\"module\\">\\r\\n\\texport const load = async ({ fetch }) => {\\r\\n\\t\\tconst res = await fetch('/api/productlist')\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t\\tconst data = await res;\\r\\n\\t\\tlet productList = [];\\r\\n\\t\\tdata.data.forEach((product) => {\\r\\n\\t\\t\\tproductList.push(product.data);\\r\\n\\t\\t});\\r\\n\\t\\treturn {\\r\\n\\t\\t\\tprops: { productList: productList }\\r\\n\\t\\t};\\r\\n\\t};\\r\\n<\/script>\\r\\n\\r\\n<script>\\r\\n\\timport { cart, userCredentials } from '../../../stores';\\r\\n\\texport let productList;\\r\\n\\r\\n\\tlet deleteProduct = async (product) => {\\r\\n\\t\\tlet secret = JSON.parse(localStorage.getItem('userCredentials')).secret;\\r\\n\\t\\tconst res = await fetch('/api/deleteproduct', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({\\r\\n\\t\\t\\t\\tname: product,\\r\\n\\t\\t\\t\\tsecret: secret\\r\\n\\t\\t\\t})\\r\\n\\t\\t})\\r\\n\\t\\t\\t.catch((err) => {\\r\\n\\t\\t\\t\\treturn err;\\r\\n\\t\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\tconsole.log(json.data);\\r\\n\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t\\t\\tlocation.reload();\\r\\n\\t};\\r\\n<\/script>\\r\\n\\r\\n<h1>Product List</h1>\\r\\n{#if $userCredentials.type != 'manager'}\\r\\n\\t<p class=\\"unauthorized\\">You are not allowed here >:(</p>\\r\\n{:else}\\r\\n\\t<div class=\\"productList\\">\\r\\n\\t\\t{#each productList as product}\\r\\n\\t\\t\\t<div class=\\"elem\\">\\r\\n\\t\\t\\t\\t<picture>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-120.webp, /{product.image}-240.webp 2x\\"\\r\\n\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:1200px)\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-120.jpg, /{product.image}-240.jpg 2x\\"\\r\\n\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:1200px)\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-240.webp, /{product.image}-400.webp 2x\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-240.jpg, /{product.image}-400.jpg 2x\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<img src=\\"/{product.image}-240.jpg\\" alt=\\"hi:)\\" class=\\"bg-image\\" />\\r\\n\\t\\t\\t\\t</picture>\\r\\n\\t\\t\\t\\t<div class=\\"text\\">\\r\\n\\t\\t\\t\\t\\t<p class=\\"name\\">{product.name}</p>\\r\\n\\t\\t\\t\\t\\t<a sveltekit:prefetch class=\\"action\\" href=\\"/backstore/products/{product.name}\\">Edit Product</a>\\r\\n\\t\\t\\t\\t\\t<p class=\\"action\\" on:click={deleteProduct(product.name)}>Delete Product</p>\\r\\n\\t\\t\\t\\t</div>\\r\\n\\t\\t\\t</div>\\r\\n\\t\\t{/each}\\r\\n\\t\\t<div class=\\"elem new\\"><a sveltekit:prefetch href=\\"/backstore/products/new\\">Add A Product</a></div>\\r\\n\\t</div>\\r\\n{/if}\\r\\n\\r\\n<style lang=\\"scss\\">h1 {\\n  text-align: center;\\n}\\n\\n.unauthorized {\\n  text-align: center;\\n}\\n\\n.productList {\\n  display: grid;\\n  max-width: 80vw;\\n  margin: auto;\\n  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));\\n  gap: 1rem 1rem;\\n  margin-top: 2rem;\\n  align-content: center;\\n  justify-items: center;\\n}\\n.productList .elem {\\n  display: flex;\\n  width: 100%;\\n  border: 1px solid #cecece;\\n}\\n.productList .elem img {\\n  height: 100%;\\n  width: 4rem;\\n  object-fit: cover;\\n}\\n.productList .elem .text {\\n  display: flex;\\n  flex-direction: column;\\n  justify-content: space-evenly;\\n  margin-left: 1rem;\\n  width: 100%;\\n}\\n.productList .elem .text .action {\\n  cursor: pointer;\\n}\\n.productList .new {\\n  justify-content: center;\\n  align-items: center;\\n}</style>\\r\\n"],"names":[],"mappings":"AAmFmB,EAAE,8BAAC,CAAC,AACrB,UAAU,CAAE,MAAM,AACpB,CAAC,AAED,aAAa,8BAAC,CAAC,AACb,UAAU,CAAE,MAAM,AACpB,CAAC,AAED,YAAY,8BAAC,CAAC,AACZ,OAAO,CAAE,IAAI,CACb,SAAS,CAAE,IAAI,CACf,MAAM,CAAE,IAAI,CACZ,qBAAqB,CAAE,OAAO,QAAQ,CAAC,CAAC,OAAO,KAAK,CAAC,CAAC,GAAG,CAAC,CAAC,CAC3D,GAAG,CAAE,IAAI,CAAC,IAAI,CACd,UAAU,CAAE,IAAI,CAChB,aAAa,CAAE,MAAM,CACrB,aAAa,CAAE,MAAM,AACvB,CAAC,AACD,2BAAY,CAAC,KAAK,eAAC,CAAC,AAClB,OAAO,CAAE,IAAI,CACb,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,GAAG,CAAC,KAAK,CAAC,OAAO,AAC3B,CAAC,AACD,2BAAY,CAAC,KAAK,CAAC,GAAG,eAAC,CAAC,AACtB,MAAM,CAAE,IAAI,CACZ,KAAK,CAAE,IAAI,CACX,UAAU,CAAE,KAAK,AACnB,CAAC,AACD,2BAAY,CAAC,KAAK,CAAC,KAAK,eAAC,CAAC,AACxB,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,eAAe,CAAE,YAAY,CAC7B,WAAW,CAAE,IAAI,CACjB,KAAK,CAAE,IAAI,AACb,CAAC,AACD,2BAAY,CAAC,KAAK,CAAC,KAAK,CAAC,OAAO,eAAC,CAAC,AAChC,MAAM,CAAE,OAAO,AACjB,CAAC,AACD,2BAAY,CAAC,IAAI,eAAC,CAAC,AACjB,eAAe,CAAE,MAAM,CACvB,WAAW,CAAE,MAAM,AACrB,CAAC"}`
+};
+var load$6 = async ({ fetch: fetch2 }) => {
+  const res = await fetch2("/api/productlist").then((response) => response.json()).then((json) => {
+    return json;
+  });
+  const data = await res;
+  let productList = [];
+  data.data.forEach((product) => {
+    productList.push(product.data);
+  });
+  return { props: { productList } };
+};
 var Products$1 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `<h1>Product List</h1>`;
+  let $userCredentials, $$unsubscribe_userCredentials;
+  $$unsubscribe_userCredentials = subscribe(userCredentials, (value) => $userCredentials = value);
+  let { productList } = $$props;
+  if ($$props.productList === void 0 && $$bindings.productList && productList !== void 0)
+    $$bindings.productList(productList);
+  $$result.css.add(css$a);
+  $$unsubscribe_userCredentials();
+  return `<h1 class="${"svelte-1gcboyt"}">Product List</h1>
+${$userCredentials.type != "manager" ? `<p class="${"unauthorized svelte-1gcboyt"}">You are not allowed here &gt;:(</p>` : `<div class="${"productList svelte-1gcboyt"}">${each(productList, (product) => `<div class="${"elem svelte-1gcboyt"}"><picture><source srcset="${"/" + escape2(product.image) + "-120.webp, /" + escape2(product.image) + "-240.webp 2x"}" media="${"(max-width:1200px)"}" type="${"image/webp"}">
+					<source srcset="${"/" + escape2(product.image) + "-120.jpg, /" + escape2(product.image) + "-240.jpg 2x"}" media="${"(max-width:1200px)"}" type="${"image/jpeg"}">
+					<source srcset="${"/" + escape2(product.image) + "-240.webp, /" + escape2(product.image) + "-400.webp 2x"}" type="${"image/webp"}">
+					<source srcset="${"/" + escape2(product.image) + "-240.jpg, /" + escape2(product.image) + "-400.jpg 2x"}" type="${"image/jpeg"}">
+					<img src="${"/" + escape2(product.image) + "-240.jpg"}" alt="${"hi:)"}" class="${"bg-image svelte-1gcboyt"}"></picture>
+				<div class="${"text svelte-1gcboyt"}"><p class="${"name"}">${escape2(product.name)}</p>
+					<a sveltekit:prefetch class="${"action svelte-1gcboyt"}" href="${"/backstore/products/" + escape2(product.name)}">Edit Product</a>
+					<p class="${"action svelte-1gcboyt"}">Delete Product</p></div>
+			</div>`)}
+		<div class="${"elem new svelte-1gcboyt"}"><a sveltekit:prefetch href="${"/backstore/products/new"}">Add A Product</a></div></div>`}`;
 });
 var index$4 = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module",
-  "default": Products$1
+  "default": Products$1,
+  load: load$6
 });
+var css$9 = {
+  code: "h1.svelte-1lmcoca{text-align:center}form.svelte-1lmcoca,input.svelte-1lmcoca,select.svelte-1lmcoca{background-color:#efefef}",
+  map: `{"version":3,"file":"new.svelte","sources":["new.svelte"],"sourcesContent":["<script>\\r\\n  let name, price, rebate, origin, description, image, aisle;\\r\\n  let save = async () => {\\r\\n    let secret = JSON.parse(localStorage.getItem('userCredentials')).secret\\r\\n\\t\\tconst res = await fetch('/api/newproduct', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({ secret: secret, name: name.value, price: price.value, rebate: rebate.value, origin: origin.value, description: description.value, image: image.value, aisle:aisle.value })\\r\\n\\t\\t})\\r\\n\\t\\t\\t.catch((err)=>{return err})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\tconsole.log(json.data)\\r\\n\\t\\t\\t\\t\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n    location.reload()\\r\\n  }\\r\\n<\/script>\\r\\n\\r\\n<h1>New Product</h1>\\r\\n<div class=\\"form-wrapper\\">\\r\\n\\t<form action=\\"\\">\\r\\n\\t\\t<label for=\\"email\\">Name*:</label>\\r\\n\\t\\t<input bind:this={name} value='New Product' type=\\"text\\" name=\\"name\\" id=\\"name\\" required />\\r\\n\\t\\t<label for=\\"password\\">Price*:</label>\\r\\n\\t\\t<input bind:this={price} value='0.00' type=\\"text\\" name=\\"price\\" id=\\"price\\" required />\\r\\n    <label for=\\"rebate\\">Rebate*:</label>\\r\\n\\t\\t<input bind:this={rebate} value='0.00' type=\\"text\\" name=\\"rebate\\" id=\\"rebate\\" required />\\r\\n    <label for=\\"origin\\">Origin*:</label>\\r\\n\\t\\t<input bind:this={origin} value='Origin' type=\\"text\\" name=\\"origin\\" id=\\"origin\\" required />\\r\\n    <label for=\\"description\\">Description*:</label>\\r\\n\\t\\t<input bind:this={description} value='Description' type=\\"text\\" name=\\"description\\" id=\\"description\\" required />\\r\\n    <label for=\\"origin\\">Image*:</label>\\r\\n\\t\\t<input bind:this={image} value='Fruits' type=\\"text\\" name=\\"image\\" id=\\"image\\" required />\\r\\n    <label for=\\"description\\">Aisle*:</label>\\r\\n\\t\\t<select bind:this={aisle} name=\\"aisle\\" id=\\"aisle\\" required >\\r\\n      <option value=\\"Fruits\\">Fruits</option>\\r\\n      <option value=\\"Vegetables\\">Vegetables</option>\\r\\n      <option value=\\"Meats\\">Meats</option>\\r\\n      <option value=\\"Dairy\\">Dairy</option>\\r\\n    </select>\\r\\n\\r\\n\\t\\t\\t<input value='submit' on:click={save} type=\\"button\\"/>\\r\\n\\t</form>\\r\\n</div>\\r\\n\\r\\n<style>\\r\\n  h1{\\r\\n    text-align: center;\\r\\n  }\\r\\n  form, input, select{\\r\\n    background-color: #efefef;\\r\\n  }\\r\\n</style>"],"names":[],"mappings":"AA+CE,iBAAE,CAAC,AACD,UAAU,CAAE,MAAM,AACpB,CAAC,AACD,mBAAI,CAAE,oBAAK,CAAE,qBAAM,CAAC,AAClB,gBAAgB,CAAE,OAAO,AAC3B,CAAC"}`
+};
+var New$2 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  let name, price, rebate, origin, description, image, aisle;
+  $$result.css.add(css$9);
+  return `<h1 class="${"svelte-1lmcoca"}">New Product</h1>
+<div class="${"form-wrapper"}"><form action="${""}" class="${"svelte-1lmcoca"}"><label for="${"email"}">Name*:</label>
+		<input value="${"New Product"}" type="${"text"}" name="${"name"}" id="${"name"}" required class="${"svelte-1lmcoca"}"${add_attribute("this", name, 0)}>
+		<label for="${"password"}">Price*:</label>
+		<input value="${"0.00"}" type="${"text"}" name="${"price"}" id="${"price"}" required class="${"svelte-1lmcoca"}"${add_attribute("this", price, 0)}>
+    <label for="${"rebate"}">Rebate*:</label>
+		<input value="${"0.00"}" type="${"text"}" name="${"rebate"}" id="${"rebate"}" required class="${"svelte-1lmcoca"}"${add_attribute("this", rebate, 0)}>
+    <label for="${"origin"}">Origin*:</label>
+		<input value="${"Origin"}" type="${"text"}" name="${"origin"}" id="${"origin"}" required class="${"svelte-1lmcoca"}"${add_attribute("this", origin, 0)}>
+    <label for="${"description"}">Description*:</label>
+		<input value="${"Description"}" type="${"text"}" name="${"description"}" id="${"description"}" required class="${"svelte-1lmcoca"}"${add_attribute("this", description, 0)}>
+    <label for="${"origin"}">Image*:</label>
+		<input value="${"Fruits"}" type="${"text"}" name="${"image"}" id="${"image"}" required class="${"svelte-1lmcoca"}"${add_attribute("this", image, 0)}>
+    <label for="${"description"}">Aisle*:</label>
+		<select name="${"aisle"}" id="${"aisle"}" required class="${"svelte-1lmcoca"}"${add_attribute("this", aisle, 0)}><option value="${"Fruits"}">Fruits</option><option value="${"Vegetables"}">Vegetables</option><option value="${"Meats"}">Meats</option><option value="${"Dairy"}">Dairy</option></select>
+
+			<input value="${"submit"}" type="${"button"}" class="${"svelte-1lmcoca"}"></form>
+</div>`;
+});
+var _new$2 = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  "default": New$2
+});
+var css$8 = {
+  code: "h1.svelte-vva4b0{text-align:center}form.svelte-vva4b0,input.svelte-vva4b0,select.svelte-vva4b0{background-color:#efefef}",
+  map: `{"version":3,"file":"[product].svelte","sources":["[product].svelte"],"sourcesContent":["<script context=\\"module\\">\\r\\n\\t/**\\r\\n\\t * @type {import('@sveltejs/kit').Load}\\r\\n\\t */\\r\\n\\texport async function load({ page, fetch, session, context }) {\\r\\n\\t\\tconst productName = page.path.split('/')[3];\\r\\n\\t\\treturn {\\r\\n\\t\\t\\tprops: {\\r\\n\\t\\t\\t\\tproductName\\r\\n\\t\\t\\t}\\r\\n\\t\\t};\\r\\n\\t}\\r\\n<\/script>\\r\\n\\r\\n<script>\\r\\n\\timport { goto } from '$app/navigation';\\r\\n\\r\\n\\texport let productName;\\r\\n\\timport { onMount } from 'svelte';\\r\\n\\tlet product = {};\\r\\n\\tonMount(async () => {\\r\\n\\t\\tconst res = await fetch('/api/productbyname', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({ name: productName })\\r\\n\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t\\tlet data = await res;\\r\\n\\t\\tconsole.log(await res.data[0].data);\\r\\n\\t\\tproduct = await res.data[0].data;\\r\\n\\t});\\r\\n\\r\\n\\tlet name, price, rebate, origin, description, image, aisle;\\r\\n\\tlet save = async () => {\\r\\n\\t\\tlet secret = JSON.parse(localStorage.getItem('userCredentials')).secret;\\r\\n\\t\\tconst res = await fetch('/api/editproduct', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({\\r\\n\\t\\t\\t\\togname: productName,\\r\\n\\t\\t\\t\\tsecret: secret,\\r\\n\\t\\t\\t\\tname: name.value,\\r\\n\\t\\t\\t\\tprice: price.value,\\r\\n\\t\\t\\t\\trebate: rebate.value,\\r\\n\\t\\t\\t\\torigin: origin.value,\\r\\n\\t\\t\\t\\tdescription: description.value,\\r\\n\\t\\t\\t\\timage: image.value,\\r\\n\\t\\t\\t\\taisle: aisle.value\\r\\n\\t\\t\\t})\\r\\n\\t\\t})\\r\\n\\t\\t\\t.catch((err) => {\\r\\n\\t\\t\\t\\treturn err;\\r\\n\\t\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\tconsole.log(json.data);\\r\\n\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t\\tif (name.value == productName) {\\r\\n\\t\\t\\tlocation.reload();\\r\\n\\t\\t} else {\\r\\n\\t\\t\\tgoto('/backstore/products/' + name.value);\\r\\n\\t\\t\\tlocation.reload();\\r\\n\\t\\t}\\r\\n\\t};\\r\\n<\/script>\\r\\n\\r\\n<h1>{product.name}</h1>\\r\\n<div class=\\"form-wrapper\\">\\r\\n\\t<form action=\\"\\">\\r\\n\\t\\t<label for=\\"email\\">Name*:</label>\\r\\n\\t\\t<input bind:this={name} value={product.name} type=\\"text\\" name=\\"name\\" id=\\"name\\" required />\\r\\n\\t\\t<label for=\\"password\\">Price*:</label>\\r\\n\\t\\t<input bind:this={price} value={product.price} type=\\"text\\" name=\\"price\\" id=\\"price\\" required />\\r\\n\\t\\t<label for=\\"rebate\\">Rebate*:</label>\\r\\n\\t\\t<input\\r\\n\\t\\t\\tbind:this={rebate}\\r\\n\\t\\t\\tvalue={product.rebate}\\r\\n\\t\\t\\ttype=\\"text\\"\\r\\n\\t\\t\\tname=\\"rebate\\"\\r\\n\\t\\t\\tid=\\"rebate\\"\\r\\n\\t\\t\\trequired\\r\\n\\t\\t/>\\r\\n\\t\\t<label for=\\"origin\\">Origin*:</label>\\r\\n\\t\\t<input\\r\\n\\t\\t\\tbind:this={origin}\\r\\n\\t\\t\\tvalue={product.origin}\\r\\n\\t\\t\\ttype=\\"text\\"\\r\\n\\t\\t\\tname=\\"origin\\"\\r\\n\\t\\t\\tid=\\"origin\\"\\r\\n\\t\\t\\trequired\\r\\n\\t\\t/>\\r\\n\\t\\t<label for=\\"description\\">Description*:</label>\\r\\n\\t\\t<input\\r\\n\\t\\t\\tbind:this={description}\\r\\n\\t\\t\\tvalue={product.description}\\r\\n\\t\\t\\ttype=\\"text\\"\\r\\n\\t\\t\\tname=\\"description\\"\\r\\n\\t\\t\\tid=\\"description\\"\\r\\n\\t\\t\\trequired\\r\\n\\t\\t/>\\r\\n\\t\\t<label for=\\"origin\\">Image*:</label>\\r\\n\\t\\t<input bind:this={image} value={product.image} type=\\"text\\" name=\\"image\\" id=\\"image\\" required />\\r\\n\\t\\t<label for=\\"description\\">Aisle*:</label>\\r\\n\\t\\t<select bind:this={aisle} name=\\"aisle\\" value={product.aisle} id=\\"aisle\\" required>\\r\\n\\t\\t\\t<option value=\\"Fruits\\">Fruits</option>\\r\\n\\t\\t\\t<option value=\\"Vegetables\\">Vegetables</option>\\r\\n\\t\\t\\t<option value=\\"Meats\\">Meats</option>\\r\\n\\t\\t\\t<option value=\\"Dairy\\">Dairy</option>\\r\\n\\t\\t</select>\\r\\n\\r\\n\\t\\t<input value=\\"submit\\" on:click={save} type=\\"button\\" />\\r\\n\\t</form>\\r\\n</div>\\r\\n\\r\\n<style lang=\\"scss\\">h1 {\\n  text-align: center;\\n}\\n\\nform,\\ninput,\\nselect {\\n  background-color: #efefef;\\n}</style>\\r\\n"],"names":[],"mappings":"AAqHmB,EAAE,cAAC,CAAC,AACrB,UAAU,CAAE,MAAM,AACpB,CAAC,AAED,kBAAI,CACJ,mBAAK,CACL,MAAM,cAAC,CAAC,AACN,gBAAgB,CAAE,OAAO,AAC3B,CAAC"}`
+};
+async function load$5({ page, fetch: fetch2, session, context }) {
+  const productName = page.path.split("/")[3];
+  return { props: { productName } };
+}
+var U5Bproductu5D$1 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  let { productName } = $$props;
+  let product = {};
+  let name, price, rebate, origin, description, image, aisle;
+  if ($$props.productName === void 0 && $$bindings.productName && productName !== void 0)
+    $$bindings.productName(productName);
+  $$result.css.add(css$8);
+  return `<h1 class="${"svelte-vva4b0"}">${escape2(product.name)}</h1>
+<div class="${"form-wrapper"}"><form action="${""}" class="${"svelte-vva4b0"}"><label for="${"email"}">Name*:</label>
+		<input${add_attribute("value", product.name, 0)} type="${"text"}" name="${"name"}" id="${"name"}" required class="${"svelte-vva4b0"}"${add_attribute("this", name, 0)}>
+		<label for="${"password"}">Price*:</label>
+		<input${add_attribute("value", product.price, 0)} type="${"text"}" name="${"price"}" id="${"price"}" required class="${"svelte-vva4b0"}"${add_attribute("this", price, 0)}>
+		<label for="${"rebate"}">Rebate*:</label>
+		<input${add_attribute("value", product.rebate, 0)} type="${"text"}" name="${"rebate"}" id="${"rebate"}" required class="${"svelte-vva4b0"}"${add_attribute("this", rebate, 0)}>
+		<label for="${"origin"}">Origin*:</label>
+		<input${add_attribute("value", product.origin, 0)} type="${"text"}" name="${"origin"}" id="${"origin"}" required class="${"svelte-vva4b0"}"${add_attribute("this", origin, 0)}>
+		<label for="${"description"}">Description*:</label>
+		<input${add_attribute("value", product.description, 0)} type="${"text"}" name="${"description"}" id="${"description"}" required class="${"svelte-vva4b0"}"${add_attribute("this", description, 0)}>
+		<label for="${"origin"}">Image*:</label>
+		<input${add_attribute("value", product.image, 0)} type="${"text"}" name="${"image"}" id="${"image"}" required class="${"svelte-vva4b0"}"${add_attribute("this", image, 0)}>
+		<label for="${"description"}">Aisle*:</label>
+		<select name="${"aisle"}"${add_attribute("value", product.aisle, 0)} id="${"aisle"}" required class="${"svelte-vva4b0"}"${add_attribute("this", aisle, 0)}><option value="${"Fruits"}">Fruits</option><option value="${"Vegetables"}">Vegetables</option><option value="${"Meats"}">Meats</option><option value="${"Dairy"}">Dairy</option></select>
+
+		<input value="${"submit"}" type="${"button"}" class="${"svelte-vva4b0"}"></form>
+</div>`;
+});
+var _product_$1 = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  "default": U5Bproductu5D$1,
+  load: load$5
+});
+var css$7 = {
+  code: "h1.svelte-x0od9k.svelte-x0od9k{text-align:center}.unauthorized.svelte-x0od9k.svelte-x0od9k{text-align:center}.orderList.svelte-x0od9k.svelte-x0od9k{display:grid;max-width:80vw;margin:auto;grid-template-columns:1fr;gap:1rem 1rem;margin-top:2rem;align-content:center;justify-items:center}.orderList.svelte-x0od9k .elem.svelte-x0od9k{display:flex;flex-wrap:wrap;width:100%;border:1px solid #cecece;padding:0.5rem}.orderList.svelte-x0od9k .elem p.svelte-x0od9k,.orderList.svelte-x0od9k .elem a.svelte-x0od9k{margin-right:1rem}.orderList.svelte-x0od9k .elem .action.svelte-x0od9k{cursor:pointer}",
+  map: `{"version":3,"file":"index.svelte","sources":["index.svelte"],"sourcesContent":["<script>\\r\\n\\timport { userCredentials } from '../../../stores';\\r\\n\\timport { onMount } from 'svelte';\\r\\n\\r\\n\\tlet orderList = [];\\r\\n\\tonMount(async () => {\\r\\n\\t\\tconst res = await fetch('/api/orderlist', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({ secret: $userCredentials.secret })\\r\\n\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n    let data = await res;\\r\\n    console.log(await data)\\r\\n\\t\\tlet tempList = []\\r\\n\\t\\tdata.data.forEach((order) => {\\r\\n\\t\\t\\ttempList.push(order);\\r\\n\\t\\t});\\r\\n    orderList =  tempList\\r\\n\\t});\\r\\n\\tlet deleteOrder = async (order) => {\\r\\n\\t\\tlet secret = JSON.parse(localStorage.getItem('userCredentials')).secret;\\r\\n\\t\\tconst res = await fetch('/api/deleteorder', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({\\r\\n\\t\\t\\t\\tid: order,\\r\\n\\t\\t\\t\\tsecret: secret\\r\\n\\t\\t\\t})\\r\\n\\t\\t})\\r\\n\\t\\t\\t.catch((err) => {\\r\\n\\t\\t\\t\\treturn err;\\r\\n\\t\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\tconsole.log(json.data);\\r\\n\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t\\t\\tlocation.reload();\\r\\n\\t};\\r\\n\\r\\n  let sum = (cart) => {\\r\\n    let sum = 0\\r\\n    cart.forEach(product => {\\r\\n      sum = sum + product.amount\\r\\n    });\\r\\n    return sum\\r\\n  }\\r\\n<\/script>\\r\\n\\r\\n\\r\\n<h1>Order List</h1>\\r\\n{#if $userCredentials.type != 'manager'}\\r\\n\\t<p class=\\"unauthorized\\">You are not allowed here >:(</p>\\r\\n{:else}\\r\\n<div class=\\"orderList\\">\\r\\n  {#each orderList as order }\\r\\n  <div class=\\"elem\\">\\r\\n\\t\\t<p class=\\"name\\">{order.ref[\\"@ref\\"].id} - {order.data.email} - ({sum(order.data.cart)})</p>\\r\\n\\t\\t<a sveltekit:prefetch href=\\"/backstore/orders/{order.ref[\\"@ref\\"].id}\\">Edit Order</a>\\r\\n    <p class=\\"action\\" on:click={deleteOrder(order.ref[\\"@ref\\"].id)}>Delete Order</p>\\r\\n\\t</div>\\r\\n  {/each}\\r\\n</div>\\r\\n{/if}\\r\\n\\r\\n<style lang=\\"scss\\">h1 {\\n  text-align: center;\\n}\\n\\n.unauthorized {\\n  text-align: center;\\n}\\n\\n.orderList {\\n  display: grid;\\n  max-width: 80vw;\\n  margin: auto;\\n  grid-template-columns: 1fr;\\n  gap: 1rem 1rem;\\n  margin-top: 2rem;\\n  align-content: center;\\n  justify-items: center;\\n}\\n.orderList .elem {\\n  display: flex;\\n  flex-wrap: wrap;\\n  width: 100%;\\n  border: 1px solid #cecece;\\n  padding: 0.5rem;\\n}\\n.orderList .elem p, .orderList .elem a {\\n  margin-right: 1rem;\\n}\\n.orderList .elem .action {\\n  cursor: pointer;\\n}</style>"],"names":[],"mappings":"AAoEmB,EAAE,4BAAC,CAAC,AACrB,UAAU,CAAE,MAAM,AACpB,CAAC,AAED,aAAa,4BAAC,CAAC,AACb,UAAU,CAAE,MAAM,AACpB,CAAC,AAED,UAAU,4BAAC,CAAC,AACV,OAAO,CAAE,IAAI,CACb,SAAS,CAAE,IAAI,CACf,MAAM,CAAE,IAAI,CACZ,qBAAqB,CAAE,GAAG,CAC1B,GAAG,CAAE,IAAI,CAAC,IAAI,CACd,UAAU,CAAE,IAAI,CAChB,aAAa,CAAE,MAAM,CACrB,aAAa,CAAE,MAAM,AACvB,CAAC,AACD,wBAAU,CAAC,KAAK,cAAC,CAAC,AAChB,OAAO,CAAE,IAAI,CACb,SAAS,CAAE,IAAI,CACf,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,GAAG,CAAC,KAAK,CAAC,OAAO,CACzB,OAAO,CAAE,MAAM,AACjB,CAAC,AACD,wBAAU,CAAC,KAAK,CAAC,eAAC,CAAE,wBAAU,CAAC,KAAK,CAAC,CAAC,cAAC,CAAC,AACtC,YAAY,CAAE,IAAI,AACpB,CAAC,AACD,wBAAU,CAAC,KAAK,CAAC,OAAO,cAAC,CAAC,AACxB,MAAM,CAAE,OAAO,AACjB,CAAC"}`
+};
 var Orders = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `<h1>Order List</h1>`;
+  let $userCredentials, $$unsubscribe_userCredentials;
+  $$unsubscribe_userCredentials = subscribe(userCredentials, (value) => $userCredentials = value);
+  let orderList = [];
+  let sum = (cart2) => {
+    let sum2 = 0;
+    cart2.forEach((product) => {
+      sum2 = sum2 + product.amount;
+    });
+    return sum2;
+  };
+  $$result.css.add(css$7);
+  $$unsubscribe_userCredentials();
+  return `<h1 class="${"svelte-x0od9k"}">Order List</h1>
+${$userCredentials.type != "manager" ? `<p class="${"unauthorized svelte-x0od9k"}">You are not allowed here &gt;:(</p>` : `<div class="${"orderList svelte-x0od9k"}">${each(orderList, (order) => `<div class="${"elem svelte-x0od9k"}"><p class="${"name svelte-x0od9k"}">${escape2(order.ref["@ref"].id)} - ${escape2(order.data.email)} - (${escape2(sum(order.data.cart))})</p>
+		<a sveltekit:prefetch href="${"/backstore/orders/" + escape2(order.ref["@ref"].id)}" class="${"svelte-x0od9k"}">Edit Order</a>
+    <p class="${"action svelte-x0od9k"}">Delete Order</p>
+	</div>`)}</div>`}`;
 });
 var index$3 = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module",
   "default": Orders
 });
+var New$1 = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  return ``;
+});
+var _new$1 = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  "default": New$1
+});
+var css$6 = {
+  code: "h1.svelte-16ra34r.svelte-16ra34r{text-align:center}.cart.svelte-16ra34r.svelte-16ra34r{margin:auto;display:block}.cart.svelte-16ra34r .items.svelte-16ra34r{margin-top:1.5rem;flex-direction:row;flex-wrap:wrap}.cart.svelte-16ra34r .items .item.svelte-16ra34r{margin-right:1rem}",
+  map: `{"version":3,"file":"[order].svelte","sources":["[order].svelte"],"sourcesContent":["<script context=\\"module\\">\\r\\n\\t/**\\r\\n\\t * @type {import('@sveltejs/kit').Load}\\r\\n\\t */\\r\\n\\texport async function load({ page, fetch, session, context }) {\\r\\n\\t\\tconst orderID = page.path.split('/')[3];\\r\\n\\t\\treturn {\\r\\n\\t\\t\\tprops: {\\r\\n\\t\\t\\t\\torderID\\r\\n\\t\\t\\t}\\r\\n\\t\\t};\\r\\n\\t}\\r\\n<\/script>\\r\\n\\r\\n<script>\\r\\n\\timport { goto } from '$app/navigation';\\r\\n\\timport { onMount } from 'svelte';\\r\\n\\texport let orderID;\\r\\n\\tlet order = {cart:[]};\\r\\n\\tonMount(async () => {\\r\\n\\t\\tlet secret = JSON.parse(localStorage.getItem('userCredentials')).secret;\\r\\n\\t\\tconst res = await fetch('/api/ordersbyid', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({ id: orderID, secret: secret })\\r\\n\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\treturn json.data;\\r\\n\\t\\t\\t});\\r\\n\\t\\torder = await res;\\r\\n\\t\\tconsole.log(await order.cart);\\r\\n\\t});\\r\\n\\tlet email;\\r\\n\\r\\n\\tlet save = async () => {\\r\\n\\t\\tlet secret = JSON.parse(localStorage.getItem('userCredentials')).secret;\\r\\n\\t\\tconst res = await fetch('/api/editorder', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({\\r\\n\\t\\t\\t\\tid: orderID,\\r\\n        cart: order.cart,\\r\\n\\t\\t\\t\\tsecret: secret,\\r\\n\\t\\t\\t})\\r\\n\\t\\t})\\r\\n\\t\\t\\t.catch((err) => {\\r\\n\\t\\t\\t\\treturn err;\\r\\n\\t\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\tconsole.log(json.data);\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t};\\r\\n\\r\\n  let handleMinus = (product) => {\\r\\n\\t\\torder.cart[order.cart.indexOf(product)].amount = order.cart[order.cart.indexOf(product)].amount - 1;\\r\\n\\t\\tif (order.cart[order.cart.indexOf(product)].amount == 0) {\\r\\n\\t\\t\\thandleDelete(product);\\r\\n\\t\\t}\\r\\n\\t};\\r\\n\\tlet handlePlus = (product) => {\\r\\n\\t\\torder.cart[order.cart.indexOf(product)].amount = order.cart[order.cart.indexOf(product)].amount + 1;\\r\\n\\t};\\r\\n\\tlet handleDelete = (product) => {\\r\\n\\t\\tconsole.log('delete');\\r\\n\\t\\torder.cart[order.cart.indexOf(product)].amount = order.cart[order.cart.indexOf(product)].amount - 1;\\r\\n\\t\\torder.cart.splice(order.cart.indexOf(product), 1);\\r\\n\\t};\\r\\n<\/script>\\r\\n\\r\\n<h1>{orderID}</h1>\\r\\n<div class=\\"cart\\">\\r\\n  <div class=\\"items\\">\\r\\n    {#each order.cart as product}\\r\\n      <div class=\\"item\\">\\r\\n        <img src=\\"/{product.image}-120.jpg\\" alt=\\"hi:)\\" class=\\"bg-image\\"/>\\r\\n\\r\\n        <div class=\\"text\\">\\r\\n          <p class=\\"name\\">{product.name + ' (' + product.amount + ')'}</p>\\r\\n          {#if product.rebate != 0}\\r\\n            <p class=\\"price\\">{'$' + (product.price - product.rebate).toFixed(2)}</p>\\r\\n          {:else}\\r\\n            <p class=\\"price\\">{'$' + (parseFloat(product.price).toFixed(2))}</p>\\r\\n          {/if}\\r\\n          <div class=\\"buttons\\">\\r\\n            <span on:click={handlePlus(product)}>+</span>\\r\\n            <span on:click={handleMinus(product)}>-</span>\\r\\n            <svg on:click={handleDelete(product)} viewBox=\\"0 0 24 24\\" fill=\\"var(--dark-text)\\"\\r\\n              ><path d=\\"M0 0h24v24H0V0z\\" fill=\\"none\\" /><path\\r\\n                d=\\"M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z\\"\\r\\n              /></svg\\r\\n            >\\r\\n          </div>\\r\\n        </div>\\r\\n      </div>\\r\\n    {/each}\\r\\n  </div>\\r\\n  <input value=\\"Save\\" on:click={save} type=\\"button\\" />\\r\\n</div>\\r\\n<style lang=\\"scss\\">h1 {\\n  text-align: center;\\n}\\n\\n.cart {\\n  margin: auto;\\n  display: block;\\n}\\n.cart .items {\\n  margin-top: 1.5rem;\\n  flex-direction: row;\\n  flex-wrap: wrap;\\n}\\n.cart .items .item {\\n  margin-right: 1rem;\\n}</style>"],"names":[],"mappings":"AAmGmB,EAAE,8BAAC,CAAC,AACrB,UAAU,CAAE,MAAM,AACpB,CAAC,AAED,KAAK,8BAAC,CAAC,AACL,MAAM,CAAE,IAAI,CACZ,OAAO,CAAE,KAAK,AAChB,CAAC,AACD,oBAAK,CAAC,MAAM,eAAC,CAAC,AACZ,UAAU,CAAE,MAAM,CAClB,cAAc,CAAE,GAAG,CACnB,SAAS,CAAE,IAAI,AACjB,CAAC,AACD,oBAAK,CAAC,MAAM,CAAC,KAAK,eAAC,CAAC,AAClB,YAAY,CAAE,IAAI,AACpB,CAAC"}`
+};
+async function load$4({ page, fetch: fetch2, session, context }) {
+  const orderID = page.path.split("/")[3];
+  return { props: { orderID } };
+}
+var U5Borderu5D = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  let { orderID } = $$props;
+  let order = { cart: [] };
+  if ($$props.orderID === void 0 && $$bindings.orderID && orderID !== void 0)
+    $$bindings.orderID(orderID);
+  $$result.css.add(css$6);
+  return `<h1 class="${"svelte-16ra34r"}">${escape2(orderID)}</h1>
+<div class="${"cart svelte-16ra34r"}"><div class="${"items svelte-16ra34r"}">${each(order.cart, (product) => `<div class="${"item svelte-16ra34r"}"><img src="${"/" + escape2(product.image) + "-120.jpg"}" alt="${"hi:)"}" class="${"bg-image"}">
+
+        <div class="${"text"}"><p class="${"name"}">${escape2(product.name + " (" + product.amount + ")")}</p>
+          ${product.rebate != 0 ? `<p class="${"price"}">${escape2("$" + (product.price - product.rebate).toFixed(2))}</p>` : `<p class="${"price"}">${escape2("$" + parseFloat(product.price).toFixed(2))}</p>`}
+          <div class="${"buttons"}"><span>+</span>
+            <span>-</span>
+            <svg viewBox="${"0 0 24 24"}" fill="${"var(--dark-text)"}"><path d="${"M0 0h24v24H0V0z"}" fill="${"none"}"></path><path d="${"M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"}"></path></svg>
+          </div></div>
+      </div>`)}</div>
+  <input value="${"Save"}" type="${"button"}">
+</div>`;
+});
+var _order_ = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  "default": U5Borderu5D,
+  load: load$4
+});
+var css$5 = {
+  code: "h1.svelte-1q0qwox.svelte-1q0qwox{text-align:center}.unauthorized.svelte-1q0qwox.svelte-1q0qwox{text-align:center}.userList.svelte-1q0qwox.svelte-1q0qwox{display:grid;max-width:80vw;margin:auto;grid-template-columns:1fr;gap:1rem 1rem;margin-top:2rem;align-content:center;justify-items:center}.userList.svelte-1q0qwox .elem.svelte-1q0qwox{display:flex;flex-wrap:wrap;width:100%;border:1px solid #cecece;padding:0.5rem}.userList.svelte-1q0qwox .elem p.svelte-1q0qwox,.userList.svelte-1q0qwox .elem a.svelte-1q0qwox{margin-right:1rem}.userList.svelte-1q0qwox .elem .action.svelte-1q0qwox{cursor:pointer}",
+  map: `{"version":3,"file":"index.svelte","sources":["index.svelte"],"sourcesContent":["<script>\\r\\n\\timport { userCredentials } from '../../../stores';\\r\\n\\timport { onMount } from 'svelte';\\r\\n\\r\\n\\tlet userList = [];\\r\\n\\tonMount(async () => {\\r\\n\\t\\tconst res = await fetch('/api/userlist', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({ secret: $userCredentials.secret })\\r\\n\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n    let data = await res;\\r\\n\\t\\tlet tempList = []\\r\\n\\t\\tdata.data.forEach((user) => {\\r\\n\\t\\t\\ttempList.push(user.data);\\r\\n\\t\\t});\\r\\n    userList =  tempList\\r\\n\\t});\\r\\n\\tlet deleteUser = async (user) => {\\r\\n\\t\\tlet secret = JSON.parse(localStorage.getItem('userCredentials')).secret;\\r\\n\\t\\tconst res = await fetch('/api/deleteuser', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({\\r\\n\\t\\t\\t\\temail: user,\\r\\n\\t\\t\\t\\tsecret: secret\\r\\n\\t\\t\\t})\\r\\n\\t\\t})\\r\\n\\t\\t\\t.catch((err) => {\\r\\n\\t\\t\\t\\treturn err;\\r\\n\\t\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\tconsole.log(json.data);\\r\\n\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t\\t\\tlocation.reload();\\r\\n\\t};\\r\\n<\/script>\\r\\n\\r\\n<h1>User List</h1>\\r\\n{#if $userCredentials.type != 'manager'}\\r\\n\\t<p class=\\"unauthorized\\">You are not allowed here >:(</p>\\r\\n{:else}\\r\\n<div class=\\"userList\\">\\r\\n\\t{#each userList as user }\\r\\n\\t<div class=\\"elem\\">\\r\\n\\t\\t<p class=\\"name\\">{user.email}</p>\\r\\n\\t\\t<a sveltekit:prefetch href=\\"/backstore/users/{user.email}\\">Edit User</a>\\r\\n\\t\\t<p class=\\"action\\" on:click={deleteUser(user.email)}>Delete User</p>\\r\\n\\t</div>\\r\\n\\t{/each}\\r\\n\\t<div class=\\"elem new \\">\\r\\n\\t\\t<a sveltekit:prefetch href=\\"/backstore/users/new\\">Add a User</a>\\r\\n\\t</div>\\r\\n</div>\\r\\n{/if}\\r\\n\\r\\n<style lang=\\"scss\\">h1 {\\n  text-align: center;\\n}\\n\\n.unauthorized {\\n  text-align: center;\\n}\\n\\n.userList {\\n  display: grid;\\n  max-width: 80vw;\\n  margin: auto;\\n  grid-template-columns: 1fr;\\n  gap: 1rem 1rem;\\n  margin-top: 2rem;\\n  align-content: center;\\n  justify-items: center;\\n}\\n.userList .elem {\\n  display: flex;\\n  flex-wrap: wrap;\\n  width: 100%;\\n  border: 1px solid #cecece;\\n  padding: 0.5rem;\\n}\\n.userList .elem p, .userList .elem a {\\n  margin-right: 1rem;\\n}\\n.userList .elem .action {\\n  cursor: pointer;\\n}</style>"],"names":[],"mappings":"AA6DmB,EAAE,8BAAC,CAAC,AACrB,UAAU,CAAE,MAAM,AACpB,CAAC,AAED,aAAa,8BAAC,CAAC,AACb,UAAU,CAAE,MAAM,AACpB,CAAC,AAED,SAAS,8BAAC,CAAC,AACT,OAAO,CAAE,IAAI,CACb,SAAS,CAAE,IAAI,CACf,MAAM,CAAE,IAAI,CACZ,qBAAqB,CAAE,GAAG,CAC1B,GAAG,CAAE,IAAI,CAAC,IAAI,CACd,UAAU,CAAE,IAAI,CAChB,aAAa,CAAE,MAAM,CACrB,aAAa,CAAE,MAAM,AACvB,CAAC,AACD,wBAAS,CAAC,KAAK,eAAC,CAAC,AACf,OAAO,CAAE,IAAI,CACb,SAAS,CAAE,IAAI,CACf,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,GAAG,CAAC,KAAK,CAAC,OAAO,CACzB,OAAO,CAAE,MAAM,AACjB,CAAC,AACD,wBAAS,CAAC,KAAK,CAAC,gBAAC,CAAE,wBAAS,CAAC,KAAK,CAAC,CAAC,eAAC,CAAC,AACpC,YAAY,CAAE,IAAI,AACpB,CAAC,AACD,wBAAS,CAAC,KAAK,CAAC,OAAO,eAAC,CAAC,AACvB,MAAM,CAAE,OAAO,AACjB,CAAC"}`
+};
 var Users = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `<h1>User List</h1>`;
+  let $userCredentials, $$unsubscribe_userCredentials;
+  $$unsubscribe_userCredentials = subscribe(userCredentials, (value) => $userCredentials = value);
+  let userList = [];
+  $$result.css.add(css$5);
+  $$unsubscribe_userCredentials();
+  return `<h1 class="${"svelte-1q0qwox"}">User List</h1>
+${$userCredentials.type != "manager" ? `<p class="${"unauthorized svelte-1q0qwox"}">You are not allowed here &gt;:(</p>` : `<div class="${"userList svelte-1q0qwox"}">${each(userList, (user) => `<div class="${"elem svelte-1q0qwox"}"><p class="${"name svelte-1q0qwox"}">${escape2(user.email)}</p>
+		<a sveltekit:prefetch href="${"/backstore/users/" + escape2(user.email)}" class="${"svelte-1q0qwox"}">Edit User</a>
+		<p class="${"action svelte-1q0qwox"}">Delete User</p>
+	</div>`)}
+	<div class="${"elem new  svelte-1q0qwox"}"><a sveltekit:prefetch href="${"/backstore/users/new"}" class="${"svelte-1q0qwox"}">Add a User</a></div></div>`}`;
 });
 var index$2 = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module",
   "default": Users
+});
+var css$4 = {
+  code: "h1.svelte-1kkvulq{text-align:center}form.svelte-1kkvulq,input.svelte-1kkvulq{background-color:#efefef}",
+  map: `{"version":3,"file":"new.svelte","sources":["new.svelte"],"sourcesContent":["<script>\\r\\nimport { goto } from \\"$app/navigation\\";\\r\\n\\r\\n\\r\\n  let email;\\r\\n\\tlet password;\\r\\n  let save = async () => {\\r\\n    let secret = JSON.parse(localStorage.getItem('userCredentials')).secret\\r\\n\\t\\tconst res = await fetch('/api/newUser', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({ secret: secret, email: email.value, password: password.value})\\r\\n\\t\\t})\\r\\n\\t\\t\\t.catch((err)=>{return err})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\tconsole.log(json.data)\\r\\n\\t\\t\\t\\t\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n    location.reload()\\r\\n  }\\r\\n<\/script>\\r\\n\\r\\n<h1>New User</h1>\\r\\n<div class=\\"form-wrapper\\">\\r\\n\\t<form action=\\"\\">\\r\\n\\t\\t<label for=\\"email\\">Email*:</label>\\r\\n\\t\\t<input bind:this={email} value='' type=\\"text\\" name=\\"name\\" id=\\"name\\" required />\\r\\n\\t\\t<label for=\\"email\\">Password*:</label>\\r\\n\\t\\t<input bind:this={password} value='' type=\\"password\\" name=\\"password\\" id=\\"password\\" required />\\r\\n\\t\\t\\t<input value='Submit' on:click={save} type=\\"button\\"/>\\r\\n\\t</form>\\r\\n</div>\\r\\n\\r\\n<style>\\r\\n  h1{\\r\\n    text-align: center;\\r\\n  }\\r\\n  form, input{\\r\\n    background-color: #efefef;\\r\\n  }\\r\\n</style>"],"names":[],"mappings":"AAmCE,iBAAE,CAAC,AACD,UAAU,CAAE,MAAM,AACpB,CAAC,AACD,mBAAI,CAAE,oBAAK,CAAC,AACV,gBAAgB,CAAE,OAAO,AAC3B,CAAC"}`
+};
+var New = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  let email;
+  let password;
+  $$result.css.add(css$4);
+  return `<h1 class="${"svelte-1kkvulq"}">New User</h1>
+<div class="${"form-wrapper"}"><form action="${""}" class="${"svelte-1kkvulq"}"><label for="${"email"}">Email*:</label>
+		<input value="${""}" type="${"text"}" name="${"name"}" id="${"name"}" required class="${"svelte-1kkvulq"}"${add_attribute("this", email, 0)}>
+		<label for="${"email"}">Password*:</label>
+		<input value="${""}" type="${"password"}" name="${"password"}" id="${"password"}" required class="${"svelte-1kkvulq"}"${add_attribute("this", password, 0)}>
+			<input value="${"Submit"}" type="${"button"}" class="${"svelte-1kkvulq"}"></form>
+</div>`;
+});
+var _new = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  "default": New
+});
+var css$3 = {
+  code: "h1.svelte-11m0j8y,h2.svelte-11m0j8y,p.svelte-11m0j8y{text-align:center}form.svelte-11m0j8y,input.svelte-11m0j8y{background-color:#efefef}",
+  map: `{"version":3,"file":"[user].svelte","sources":["[user].svelte"],"sourcesContent":["<script context=\\"module\\">\\r\\n\\t/**\\r\\n\\t * @type {import('@sveltejs/kit').Load}\\r\\n\\t */\\r\\n\\texport async function load({ page, fetch, session, context }) {\\r\\n\\t\\tconst userEmail = page.path.split('/')[3];\\r\\n\\t\\treturn {\\r\\n\\t\\t\\tprops: {\\r\\n\\t\\t\\t\\tuserEmail\\r\\n\\t\\t\\t}\\r\\n\\t\\t};\\r\\n\\t}\\r\\n<\/script>\\r\\n\\r\\n<script>\\r\\n\\timport { goto } from '$app/navigation';\\r\\n\\timport { onMount } from 'svelte';\\r\\n\\texport let userEmail;\\r\\n\\tlet orders = [];\\r\\n\\tonMount(async () => {\\r\\n\\t\\tlet secret = JSON.parse(localStorage.getItem('userCredentials')).secret;\\r\\n\\t\\tconst res = await fetch('/api/ordersbyemail', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({ email: userEmail, secret: secret })\\r\\n\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\treturn json.data;\\r\\n\\t\\t\\t});\\r\\n\\t\\tlet data = await res;\\r\\n\\t\\torders = data;\\r\\n\\t\\tconsole.log(await res);\\r\\n\\t});\\r\\n\\tlet email;\\r\\n\\tlet save = async () => {\\r\\n\\t\\tlet secret = JSON.parse(localStorage.getItem('userCredentials')).secret;\\r\\n\\t\\tconst res = await fetch('/api/edituser', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({\\r\\n\\t\\t\\t\\togemail: userEmail,\\r\\n\\t\\t\\t\\tsecret: secret,\\r\\n\\t\\t\\t\\temail: email.value\\r\\n\\t\\t\\t})\\r\\n\\t\\t})\\r\\n\\t\\t\\t.catch((err) => {\\r\\n\\t\\t\\t\\treturn err;\\r\\n\\t\\t\\t})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\tconsole.log(json.data);\\r\\n\\t\\t\\t\\tif (email.value == userEmail) {\\r\\n\\t\\t\\t\\t\\tlocation.reload();\\r\\n\\t\\t\\t\\t} else {\\r\\n\\t\\t\\t\\t\\tgoto('/backstore/users/' + email.value);\\r\\n\\t\\t\\t\\t\\tlocation.reload();\\r\\n\\t\\t\\t\\t}\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t};\\r\\n<\/script>\\r\\n\\r\\n<h1>{userEmail}</h1>\\r\\n<div class=\\"form-wrapper\\">\\r\\n\\t<form action=\\"\\">\\r\\n\\t\\t<label for=\\"email\\">Email*:</label>\\r\\n\\t\\t<input bind:this={email} value={userEmail} type=\\"text\\" name=\\"name\\" id=\\"name\\" required />\\r\\n\\t\\t<input value=\\"Submit\\" on:click={save} type=\\"button\\" />\\r\\n\\t</form>\\r\\n</div>\\r\\n<h2>Orders</h2>\\r\\n{#each orders as order}\\r\\n\\t<div class=\\"entry\\">\\r\\n\\t\\t<p>\\r\\n\\t\\t\\t<a sveltekit:prefetch href=\\"/backstore/orders/{order.ref['@ref'].id}\\"\\r\\n\\t\\t\\t\\t>{order.ref['@ref'].id}</a\\r\\n\\t\\t\\t>\\r\\n\\t\\t</p>\\r\\n\\t</div>\\r\\n{/each}\\r\\n\\r\\n<style lang=\\"scss\\">h1,\\nh2,\\np {\\n  text-align: center;\\n}\\n\\nform,\\ninput {\\n  background-color: #efefef;\\n}</style>\\r\\n"],"names":[],"mappings":"AAgFmB,iBAAE,CACrB,iBAAE,CACF,CAAC,eAAC,CAAC,AACD,UAAU,CAAE,MAAM,AACpB,CAAC,AAED,mBAAI,CACJ,KAAK,eAAC,CAAC,AACL,gBAAgB,CAAE,OAAO,AAC3B,CAAC"}`
+};
+async function load$3({ page, fetch: fetch2, session, context }) {
+  const userEmail = page.path.split("/")[3];
+  return { props: { userEmail } };
+}
+var U5Buseru5D = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  let { userEmail } = $$props;
+  let orders = [];
+  let email;
+  if ($$props.userEmail === void 0 && $$bindings.userEmail && userEmail !== void 0)
+    $$bindings.userEmail(userEmail);
+  $$result.css.add(css$3);
+  return `<h1 class="${"svelte-11m0j8y"}">${escape2(userEmail)}</h1>
+<div class="${"form-wrapper"}"><form action="${""}" class="${"svelte-11m0j8y"}"><label for="${"email"}">Email*:</label>
+		<input${add_attribute("value", userEmail, 0)} type="${"text"}" name="${"name"}" id="${"name"}" required class="${"svelte-11m0j8y"}"${add_attribute("this", email, 0)}>
+		<input value="${"Submit"}" type="${"button"}" class="${"svelte-11m0j8y"}"></form></div>
+<h2 class="${"svelte-11m0j8y"}">Orders</h2>
+${each(orders, (order) => `<div class="${"entry"}"><p class="${"svelte-11m0j8y"}"><a sveltekit:prefetch href="${"/backstore/orders/" + escape2(order.ref["@ref"].id)}">${escape2(order.ref["@ref"].id)}</a></p>
+	</div>`)}`;
+});
+var _user_ = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  [Symbol.toStringTag]: "Module",
+  "default": U5Buseru5D,
+  load: load$3
 });
 var Products = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   return ``;
@@ -13990,76 +17017,190 @@ var index$1 = /* @__PURE__ */ Object.freeze({
   [Symbol.toStringTag]: "Module",
   "default": Products
 });
-async function load$1({ page, fetch: fetch2, session, context }) {
-  const product = page.path.split("/")[2];
-  return { props: { product } };
+async function load$2({ page, fetch: fetch2, session, context }) {
+  const productName = page.path.split("/")[2];
+  const res = await fetch2("/api/productlist").then((response) => response.json()).then((json) => {
+    return json;
+  });
+  const data = await res;
+  let productList = [];
+  data.data.forEach((product) => {
+    productList.push(product.data);
+  });
+  return { props: { productList, productName } };
 }
 var U5Bproductu5D = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { product } = $$props;
+  let $$unsubscribe_cart;
+  $$unsubscribe_cart = subscribe(cart$1, (value) => value);
+  let { productName } = $$props, { productList } = $$props;
   let currentProduct;
-  console.log(product);
-  productList$1.productList.forEach((item) => {
-    if (product === item.name.split(" ").join("-")) {
+  productList.forEach((item) => {
+    if (productName === item.name.split(" ").join("-")) {
       currentProduct = item;
     }
   });
-  if ($$props.product === void 0 && $$bindings.product && product !== void 0)
-    $$bindings.product(product);
-  return `<div class="${"product-wrapper"}"><a${add_attribute("href", "/aisles/" + currentProduct.aisle, 0)}>${escape2(currentProduct.aisle)} Aisle</a>
+  console.log(currentProduct.aisle);
+  let qty;
+  if ($$props.productName === void 0 && $$bindings.productName && productName !== void 0)
+    $$bindings.productName(productName);
+  if ($$props.productList === void 0 && $$bindings.productList && productList !== void 0)
+    $$bindings.productList(productList);
+  $$unsubscribe_cart();
+  return `<div class="${"product-wrapper"}"><a sveltekit:prefetch${add_attribute("href", "/aisles/" + currentProduct.aisle, 0)}>${escape2(currentProduct.aisle)} Aisle</a>
 	<h1 class="${"product-name"}">${escape2(currentProduct.name)}</h1>
-	<div class="${"product"}"><img${add_attribute("src", "/" + currentProduct.image, 0)}${add_attribute("alt", currentProduct.name, 0)}>
-		<div class="${"information"}"><div class="${"prices"}">${currentProduct.rebate != 0 ? `<p class="${"rebate-price"}">${escape2("$" + (currentProduct.price - currentProduct.rebate))}</p>` : `<div class="${"empty"}"></div>`}
-				<p class="${"current-price"}">${escape2("$" + currentProduct.price)}</p></div>
+	<div class="${"product"}"><div class="${"img-container"}"><picture><source srcset="${"/" + escape2(currentProduct.image) + "-400.webp, /" + escape2(currentProduct.image) + "-800.webp 2x"}" media="${"(max-width:600px)"}" type="${"image/webp"}">
+				<source srcset="${"/" + escape2(currentProduct.image) + "-400.jpg, /" + escape2(currentProduct.image) + "-800.jpg 2x"}" media="${"(max-width:600px)"}" type="${"image/jpeg"}">
+				<source srcset="${"/" + escape2(currentProduct.image) + "-600.webp"}" media="${"(max-width:820px)"}" type="${"image/webp"}">
+				<source srcset="${"/" + escape2(currentProduct.image) + "-600.jpg"}" media="${"(max-width:820px)"}" type="${"image/jpeg"}">
+				<source srcset="${"/" + escape2(currentProduct.image) + "-400.webp"}" media="${"(max-width:1600px)"}" type="${"image/webp"}">
+				<source srcset="${"/" + escape2(currentProduct.image) + "-400.jpg"}" media="${"(max-width:1600px)"}" type="${"image/jpeg"}">
+				<source srcset="${"/" + escape2(currentProduct.image) + "-600.webp"}" type="${"image/webp"}">
+				<source srcset="${"/" + escape2(currentProduct.image) + "-600.jpg"}" type="${"image/jpeg"}">
+				<img src="${"/" + escape2(currentProduct.image) + "-400.jpg"}" alt="${"hi:)"}" class="${"bg-image"}"></picture></div>
+		
+		
+		<div class="${"information"}"><div class="${"prices"}">${currentProduct.rebate != 0 ? `<p class="${"rebate-price"}"><s>${escape2("$" + (currentProduct.price * qty).toFixed(2))}</s></p>` : ``}
+				<p class="${"current-price"}">${escape2("$" + (currentProduct.price * qty - currentProduct.rebate * qty).toFixed(2))}</p></div>
+			<div class="${"quantityPicker"}"><svg viewBox="${"0 0 24 24"}" fill="${"none"}" xmlns="${"http://www.w3.org/2000/svg"}" id="${"minus"}"><path d="${"M5 12H19M3 23H21C22.1046 23 23 22.1046 23 21V3C23 1.89543 22.1046 1 21 1H3C1.89543 1 1 1.89543 1 3V21C1 22.1046 1.89543 23 3 23Z"}" stroke="${"#82172C"}"></path></svg>
+
+				${escape2(qty)}
+				<svg viewBox="${"0 0 24 24"}" fill="${"none"}" xmlns="${"http://www.w3.org/2000/svg"}" id="${"plus"}"><path d="${"M12 5V12M12 12V19M12 12H5M12 12H19M3 23H21C22.1046 23 23 22.1046 23 21V3C23 1.89543 22.1046 1 21 1H3C1.89543 1 1 1.89543 1 3V21C1 22.1046 1.89543 23 3 23Z"}" stroke="${"#82172C"}"></path></svg></div>
 			<button class="${"add-to-cart"}">Add To Cart</button>
 			<div class="${"origin"}"><i>Made in ${escape2(currentProduct.origin)}</i>
 				${currentProduct.origin == "Quebec" ? `<svg viewBox="${"0 0 16 15"}" fill="${"none"}" xmlns="${"http://www.w3.org/2000/svg"}"><path d="${"M15.7143 7.49286L13.9714 5.5L14.2143 2.86429L11.6357 2.27857L10.2857 0L7.85714 1.04286L5.42857 0L4.07857 2.27857L1.5 2.85714L1.74286 5.5L0 7.49286L1.74286 9.48571L1.5 12.1286L4.07857 12.7143L5.42857 15L7.85714 13.95L10.2857 14.9929L11.6357 12.7143L14.2143 12.1286L13.9714 9.49286L15.7143 7.49286ZM12.8929 8.55L12.4929 9.01429L12.55 9.62143L12.6786 11.0143L11.3214 11.3214L10.7214 11.4571L10.4071 11.9857L9.7 13.1857L8.42857 12.6357L7.85714 12.3929L7.29286 12.6357L6.02143 13.1857L5.31429 11.9929L5 11.4643L4.4 11.3286L3.04286 11.0214L3.17143 9.62143L3.22857 9.01429L2.82857 8.55L1.90714 7.5L2.82857 6.44286L3.22857 5.97857L3.16429 5.36429L3.03571 3.97857L4.39286 3.67143L4.99286 3.53571L5.30714 3.00714L6.01429 1.80714L7.28572 2.35714L7.85714 2.6L8.42143 2.35714L9.69286 1.80714L10.4 3.00714L10.7143 3.53571L11.3143 3.67143L12.6714 3.97857L12.5429 5.37143L12.4857 5.97857L12.8857 6.44286L13.8071 7.49286L12.8929 8.55Z"}" fill="${"#912338"}"></path><path d="${"M12.8929 8.55L12.4929 9.01429L12.55 9.62143L12.6786 11.0143L11.3214 11.3214L10.7214 11.4571L10.4071 11.9857L9.7 13.1857L8.42857 12.6357L7.85714 12.3929L7.29286 12.6357L6.02143 13.1857L5.31429 11.9929L5 11.4643L4.4 11.3286L3.04286 11.0214L3.17143 9.62143L3.22857 9.01429L2.82857 8.55L1.90714 7.5L2.82857 6.44286L3.22857 5.97857L3.16429 5.36429L3.03571 3.97857L4.39286 3.67143L4.99286 3.53571L5.30714 3.00714L6.01429 1.80714L7.28572 2.35714L7.85714 2.6L8.42143 2.35714L9.69286 1.80714L10.4 3.00714L10.7143 3.53571L11.3143 3.67143L12.6714 3.97857L12.5429 5.37143L12.4857 5.97857L12.8857 6.44286L13.8071 7.49286L12.8929 8.55Z"}" fill="${"#912338"}"></path><path d="${"M6.49261 8.75L4.83546 7.08572L3.77832 8.15L6.49261 10.8714L11.7355 5.61429L10.6783 4.55L6.49261 8.75Z"}" fill="${"white"}"></path></svg>` : ``}</div>
-			<div class="${"description"}"><p>Detailed Description</p>
-				<svg viewBox="${"0 0 11 6"}" fill="${"none"}" xmlns="${"http://www.w3.org/2000/svg"}"><path d="${"M5.51288 5.04852L9.41569 0L11 0L6.13115 6H4.88173L0 0L1.59719 0L5.51288 5.04852Z"}" fill="${"#561925"}"></path></svg></div></div></div>
+			<div class="${"description"}"><div class="${"button"}"><p>Detailed Description</p>
+					<svg viewBox="${"0 0 11 6"}" fill="${"none"}" id="${"arrow"}" xmlns="${"http://www.w3.org/2000/svg"}"><path d="${"M5.51288 5.04852L9.41569 0L11 0L6.13115 6H4.88173L0 0L1.59719 0L5.51288 5.04852Z"}" fill="${"#561925"}"></path></svg></div>
+				<div class="${"text"}" id="${"text"}">${escape2(currentProduct.description)}</div></div></div></div>
 </div>`;
 });
 var _product_ = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module",
   "default": U5Bproductu5D,
-  load: load$1
+  load: load$2
 });
+var css$2 = {
+  code: ".aisles-wrapper.svelte-ne2l2m.svelte-ne2l2m{border-bottom:0.1rem var(--main-color) solid;background-color:transparent;box-shadow:none}.aisles-wrapper.svelte-ne2l2m>h1.svelte-ne2l2m{margin-top:0;margin-bottom:1.5rem}.aisle-preview.svelte-ne2l2m.svelte-ne2l2m{width:100%;position:relative;z-index:1;border-top:0.1rem var(--main-color) solid;background:var(--main-color);display:flex;flex-direction:column;align-items:center}.aisle-preview.svelte-ne2l2m.svelte-ne2l2m:nth-of-type(1){box-shadow:0 -0.25rem 0.5rem rgba(0, 0, 0, 0.15)}.aisle-preview.svelte-ne2l2m .bg.svelte-ne2l2m{position:absolute;width:100%;height:100%;z-index:-1}.aisle-preview.svelte-ne2l2m .bg img.svelte-ne2l2m{height:100%;width:100%;object-fit:cover;filter:brightness(0.5) saturate(0.5)}.aisle-preview.svelte-ne2l2m .aisle-name.svelte-ne2l2m{font-size:2rem;font-weight:700;-webkit-text-stroke-width:0.05rem;-webkit-text-stroke-color:white;text-align:center;margin-top:1.5rem;margin-bottom:1.5rem}.aisle-preview.svelte-ne2l2m .aisle-products.svelte-ne2l2m{display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;gap:1rem;max-width:80vw;margin-bottom:2rem}.aisle-preview.svelte-ne2l2m .aisle-products .product-box.svelte-ne2l2m{border:0.25rem solid white;background-color:white;display:flex;flex-direction:column;box-shadow:0 0.1rem 0.5rem rgb(0, 0, 0)}.aisle-preview.svelte-ne2l2m .aisle-products .product-box .img-container.svelte-ne2l2m{position:relative;height:0;padding-top:100%;width:6rem}.aisle-preview.svelte-ne2l2m .aisle-products .product-box .img-container img.svelte-ne2l2m{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}.aisle-preview.svelte-ne2l2m .aisle-products .product-box a.svelte-ne2l2m{background:white;width:100%;color:black}.aisle-preview.svelte-ne2l2m .aisle-products .clear-box.svelte-ne2l2m{border:0.25rem solid white;background-color:rgba(255, 255, 255, 0.514);backdrop-filter:blur(4px);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 0.1rem 0.5rem rgb(0, 0, 0)}.aisle-preview.svelte-ne2l2m .aisle-products .clear-box .more.svelte-ne2l2m{width:6rem;text-align:center;font-size:1.5rem;font-weight:700;color:black;text-decoration-color:black}",
+  map: `{"version":3,"file":"index.svelte","sources":["index.svelte"],"sourcesContent":["<script context=\\"module\\">\\r\\n\\texport async function load({ page, fetch, session, context }) {\\r\\n\\t\\tconst res = await fetch('/api/productlist')\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t\\tconst data = await res;\\r\\n\\t\\tlet productList = [];\\r\\n\\t\\tdata.data.forEach((product) => {\\r\\n\\t\\t\\tproductList.push(product.data);\\r\\n\\t\\t});\\r\\n\\t\\treturn {\\r\\n\\t\\t\\tprops: { productList: productList}\\r\\n\\t\\t};\\r\\n\\t}\\r\\n<\/script>\\r\\n\\r\\n<script>\\r\\n\\texport let productList\\r\\n\\tlet aisles = [\\r\\n\\t\\t{ name: 'Fruits', image: 'strawberries', products: [] },\\r\\n\\t\\t{ name: 'Vegetables', image: 'cucumber', products: [] },\\r\\n\\t\\t{ name: 'Meats', image: 'steak', products: [] },\\r\\n\\t\\t{ name: 'Dairy', image: 'milk', products: [] }\\r\\n\\t];\\r\\n\\tproductList.forEach((product) => {\\r\\n\\t\\tswitch (product.aisle) {\\r\\n\\t\\t\\tcase 'Fruits':\\r\\n\\t\\t\\t\\tif (aisles[0].products.length != 3) {\\r\\n\\t\\t\\t\\t\\taisles[0].products.push(product);\\r\\n\\t\\t\\t\\t}\\r\\n\\r\\n\\t\\t\\t\\tbreak;\\r\\n\\t\\t\\tcase 'Vegetables':\\r\\n\\t\\t\\t\\tif (aisles[1].products.length != 3) {\\r\\n\\t\\t\\t\\t\\taisles[1].products.push(product);\\r\\n\\t\\t\\t\\t}\\r\\n\\t\\t\\t\\tbreak;\\r\\n\\t\\t\\tcase 'Meats':\\r\\n\\t\\t\\t\\tif (aisles[2].products.length != 3) {\\r\\n\\t\\t\\t\\t\\taisles[2].products.push(product);\\r\\n\\t\\t\\t\\t}\\r\\n\\t\\t\\t\\tbreak;\\r\\n\\t\\t\\tcase 'Dairy':\\r\\n\\t\\t\\t\\tif (aisles[3].products.length != 3) {\\r\\n\\t\\t\\t\\t\\taisles[3].products.push(product);\\r\\n\\t\\t\\t\\t}\\r\\n\\t\\t\\t\\tbreak;\\r\\n\\t\\t}\\r\\n\\t});\\r\\n<\/script>\\r\\n\\r\\n<div class=\\"aisles-wrapper\\">\\r\\n\\t<h1>Aisles</h1>\\r\\n\\t{#each aisles as aisle}\\r\\n\\t\\t<div class=\\"aisle-preview\\">\\r\\n\\t\\t\\t<div class=\\"bg\\">\\r\\n\\t\\t\\t\\t<picture>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-400.webp, /{aisle.products[0].image}-800.webp 2x\\"\\r\\n\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:400px)\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-400.jpg, /{aisle.products[0].image}-800.jpg 2x\\"\\r\\n\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:400px)\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-600.webp, /{aisle.products[0].image}-1200.webp 2x\\"\\r\\n\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:600px)\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-600.jpg, /{aisle.products[0].image}-1200.jpg 2x\\"\\r\\n\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:600px)\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-800.webp\\"\\r\\n\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:800px)\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\tsrcset=\\"/{aisle.products[0].image}-800.jpg\\"\\r\\n\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:800px)\\"\\r\\n\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\r\\n\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t<source srcset=\\"/{aisle.products[0].image}-1200.webp\\" type=\\"image/webp\\" />\\r\\n\\t\\t\\t\\t\\t<source srcset=\\"/{aisle.products[0].image}-1200.jpg\\" type=\\"image/jpeg\\" />\\r\\n\\t\\t\\t\\t\\t<img src=\\"/{aisle.products[0].image}-400.jpg\\" alt=\\"hi:)\\" class=\\"bg-image\\" />\\r\\n\\t\\t\\t\\t</picture>\\r\\n\\t\\t\\t</div>\\r\\n\\t\\t\\t<p class=\\"aisle-name\\">\\r\\n\\t\\t\\t\\t{aisle.name}\\r\\n\\t\\t\\t</p>\\r\\n\\t\\t\\t<div class=\\"aisle-products\\">\\r\\n\\t\\t\\t\\t{#each aisle.products as product}\\r\\n\\t\\t\\t\\t\\t<div class=\\"product-box\\">\\r\\n\\t\\t\\t\\t\\t\\t<div class=\\"img-container\\">\\r\\n\\t\\t\\t\\t\\t\\t\\t<picture>\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-120.webp, /{product.image}-240.webp 2x\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:1000px)\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-120.jpg, /{product.image}-240.jpg 2x\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\tmedia=\\"(max-width:1000px)\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-240.webp, /{product.image}-400.webp 2x\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\ttype=\\"image/webp\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t/>\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t<source\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\tsrcset=\\"/{product.image}-240.jpg, /{product.image}-400.jpg 2x\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t\\ttype=\\"image/jpeg\\"\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t/>\\r\\n\\r\\n\\t\\t\\t\\t\\t\\t\\t\\t<img src=\\"/{product.image}-240.jpg\\" alt=\\"hi:)\\" class=\\"bg-image\\" />\\r\\n\\t\\t\\t\\t\\t\\t\\t</picture>\\r\\n\\t\\t\\t\\t\\t\\t</div>\\r\\n\\t\\t\\t\\t\\t\\t<a sveltekit:prefetch href=\\"/products/{product.name}\\">{product.name}</a>\\r\\n\\t\\t\\t\\t\\t</div>\\r\\n\\t\\t\\t\\t{/each}\\r\\n\\t\\t\\t\\t<div class=\\"clear-box\\">\\r\\n\\t\\t\\t\\t\\t<a sveltekit:prefetch href=\\"/aisles/{aisle.name}\\" class=\\"more\\">More</a>\\r\\n\\t\\t\\t\\t</div>\\r\\n\\t\\t\\t</div>\\r\\n\\t\\t</div>\\r\\n\\t{/each}\\r\\n</div>\\r\\n<style>\\r\\n\\t.home-wrapper{\\r\\n\\t\\tpadding-bottom: 0;\\r\\n\\t\\tmargin-top: 0;\\r\\n\\t}\\r\\n\\t.aisles-wrapper {\\r\\n\\t\\tborder-bottom: 0.1rem var(--main-color) solid;\\r\\n\\t\\tbackground-color: transparent;\\r\\n\\t\\tbox-shadow: none;\\r\\n\\t}\\r\\n\\t.aisles-wrapper > h1 {\\r\\n\\t\\tmargin-top: 0;\\r\\n\\t\\tmargin-bottom: 1.5rem;\\r\\n\\t}\\r\\n\\t.aisle-preview {\\r\\n\\t\\twidth: 100%;\\r\\n\\t\\tposition: relative;\\r\\n\\t\\tz-index: 1;\\r\\n\\t\\tborder-top: 0.1rem var(--main-color) solid;\\r\\n\\t\\tbackground: var(--main-color);\\r\\n\\t\\tdisplay: flex;\\r\\n\\t\\tflex-direction: column;\\r\\n\\t\\talign-items: center;\\r\\n\\t}\\r\\n\\t.aisle-preview:nth-of-type(1) {\\r\\n\\t\\tbox-shadow: 0 -0.25rem 0.5rem rgba(0, 0, 0, 0.15);\\r\\n\\t}\\r\\n\\t.aisle-preview .bg {\\r\\n\\t\\tposition: absolute;\\r\\n\\t\\twidth: 100%;\\r\\n\\t\\theight: 100%;\\r\\n\\t\\tz-index: -1;\\r\\n\\t}\\r\\n\\t.aisle-preview .bg img {\\r\\n\\t\\theight: 100%;\\r\\n\\t\\twidth: 100%;\\r\\n\\t\\tobject-fit: cover;\\r\\n\\t\\tfilter: brightness(0.5) saturate(0.5);\\r\\n\\t}\\r\\n\\t.aisle-preview .aisle-name {\\r\\n\\t\\tfont-size: 2rem;\\r\\n\\t\\tfont-weight: 700;\\r\\n\\t\\t-webkit-text-stroke-width: 0.05rem;\\r\\n\\t\\t-webkit-text-stroke-color: white;\\r\\n\\t\\ttext-align: center;\\r\\n\\t\\tmargin-top: 1.5rem;\\r\\n\\t\\tmargin-bottom: 1.5rem;\\r\\n\\t}\\r\\n\\t.aisle-preview .aisle-products {\\r\\n\\t\\tdisplay: flex;\\r\\n\\t\\tflex-direction: row;\\r\\n\\t\\tflex-wrap: wrap;\\r\\n\\t\\tjustify-content: center;\\r\\n\\t\\tgap: 1rem;\\r\\n\\t\\tmax-width: 80vw;\\r\\n\\t\\tmargin-bottom: 2rem;\\r\\n\\t}\\r\\n\\t.aisle-preview .aisle-products .product-box {\\r\\n\\t\\tborder: 0.25rem solid white;\\r\\n\\t\\tbackground-color: white;\\r\\n\\t\\tdisplay: flex;\\r\\n\\t\\tflex-direction: column;\\r\\n\\t\\tbox-shadow: 0 0.1rem 0.5rem rgb(0, 0, 0);\\r\\n\\t}\\r\\n\\t.aisle-preview .aisle-products .product-box .img-container {\\r\\n\\t\\tposition: relative;\\r\\n\\t\\theight: 0;\\r\\n\\t\\tpadding-top: 100%;\\r\\n\\t\\twidth: 6rem;\\r\\n\\t}\\r\\n\\t.aisle-preview .aisle-products .product-box .img-container img {\\r\\n\\t\\tposition: absolute;\\r\\n\\t\\ttop: 0;\\r\\n\\t\\tleft: 0;\\r\\n\\t\\twidth: 100%;\\r\\n\\t\\theight: 100%;\\r\\n\\t\\tobject-fit: cover;\\r\\n\\t}\\r\\n\\t.aisle-preview .aisle-products .product-box a {\\r\\n\\t\\tbackground: white;\\r\\n\\t\\twidth: 100%;\\r\\n\\t\\tcolor: black;\\r\\n\\t}\\r\\n\\t.aisle-preview .aisle-products .clear-box {\\r\\n\\t\\tborder: 0.25rem solid white;\\r\\n\\t\\tbackground-color: rgba(255, 255, 255, 0.514);\\r\\n\\t\\tbackdrop-filter: blur(4px);\\r\\n\\t\\tdisplay: flex;\\r\\n\\t\\tflex-direction: column;\\r\\n\\t\\talign-items: center;\\r\\n\\t\\tjustify-content: center;\\r\\n\\t\\tbox-shadow: 0 0.1rem 0.5rem rgb(0, 0, 0);\\r\\n\\t}\\r\\n\\t.aisle-preview .aisle-products .clear-box .more {\\r\\n\\t\\twidth: 6rem;\\r\\n\\t\\ttext-align: center;\\r\\n\\t\\tfont-size: 1.5rem;\\r\\n\\t\\tfont-weight: 700;\\r\\n\\t\\tcolor: black;\\r\\n\\t\\ttext-decoration-color: black;\\r\\n\\t}\\r\\n\\r\\n</style>"],"names":[],"mappings":"AA2IC,eAAe,4BAAC,CAAC,AAChB,aAAa,CAAE,MAAM,CAAC,IAAI,YAAY,CAAC,CAAC,KAAK,CAC7C,gBAAgB,CAAE,WAAW,CAC7B,UAAU,CAAE,IAAI,AACjB,CAAC,AACD,6BAAe,CAAG,EAAE,cAAC,CAAC,AACrB,UAAU,CAAE,CAAC,CACb,aAAa,CAAE,MAAM,AACtB,CAAC,AACD,cAAc,4BAAC,CAAC,AACf,KAAK,CAAE,IAAI,CACX,QAAQ,CAAE,QAAQ,CAClB,OAAO,CAAE,CAAC,CACV,UAAU,CAAE,MAAM,CAAC,IAAI,YAAY,CAAC,CAAC,KAAK,CAC1C,UAAU,CAAE,IAAI,YAAY,CAAC,CAC7B,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,WAAW,CAAE,MAAM,AACpB,CAAC,AACD,0CAAc,aAAa,CAAC,CAAC,AAAC,CAAC,AAC9B,UAAU,CAAE,CAAC,CAAC,QAAQ,CAAC,MAAM,CAAC,KAAK,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,IAAI,CAAC,AAClD,CAAC,AACD,4BAAc,CAAC,GAAG,cAAC,CAAC,AACnB,QAAQ,CAAE,QAAQ,CAClB,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,IAAI,CACZ,OAAO,CAAE,EAAE,AACZ,CAAC,AACD,4BAAc,CAAC,GAAG,CAAC,GAAG,cAAC,CAAC,AACvB,MAAM,CAAE,IAAI,CACZ,KAAK,CAAE,IAAI,CACX,UAAU,CAAE,KAAK,CACjB,MAAM,CAAE,WAAW,GAAG,CAAC,CAAC,SAAS,GAAG,CAAC,AACtC,CAAC,AACD,4BAAc,CAAC,WAAW,cAAC,CAAC,AAC3B,SAAS,CAAE,IAAI,CACf,WAAW,CAAE,GAAG,CAChB,yBAAyB,CAAE,OAAO,CAClC,yBAAyB,CAAE,KAAK,CAChC,UAAU,CAAE,MAAM,CAClB,UAAU,CAAE,MAAM,CAClB,aAAa,CAAE,MAAM,AACtB,CAAC,AACD,4BAAc,CAAC,eAAe,cAAC,CAAC,AAC/B,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,GAAG,CACnB,SAAS,CAAE,IAAI,CACf,eAAe,CAAE,MAAM,CACvB,GAAG,CAAE,IAAI,CACT,SAAS,CAAE,IAAI,CACf,aAAa,CAAE,IAAI,AACpB,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,YAAY,cAAC,CAAC,AAC5C,MAAM,CAAE,OAAO,CAAC,KAAK,CAAC,KAAK,CAC3B,gBAAgB,CAAE,KAAK,CACvB,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,UAAU,CAAE,CAAC,CAAC,MAAM,CAAC,MAAM,CAAC,IAAI,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,AACzC,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,YAAY,CAAC,cAAc,cAAC,CAAC,AAC3D,QAAQ,CAAE,QAAQ,CAClB,MAAM,CAAE,CAAC,CACT,WAAW,CAAE,IAAI,CACjB,KAAK,CAAE,IAAI,AACZ,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,YAAY,CAAC,cAAc,CAAC,GAAG,cAAC,CAAC,AAC/D,QAAQ,CAAE,QAAQ,CAClB,GAAG,CAAE,CAAC,CACN,IAAI,CAAE,CAAC,CACP,KAAK,CAAE,IAAI,CACX,MAAM,CAAE,IAAI,CACZ,UAAU,CAAE,KAAK,AAClB,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,YAAY,CAAC,CAAC,cAAC,CAAC,AAC9C,UAAU,CAAE,KAAK,CACjB,KAAK,CAAE,IAAI,CACX,KAAK,CAAE,KAAK,AACb,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,UAAU,cAAC,CAAC,AAC1C,MAAM,CAAE,OAAO,CAAC,KAAK,CAAC,KAAK,CAC3B,gBAAgB,CAAE,KAAK,GAAG,CAAC,CAAC,GAAG,CAAC,CAAC,GAAG,CAAC,CAAC,KAAK,CAAC,CAC5C,eAAe,CAAE,KAAK,GAAG,CAAC,CAC1B,OAAO,CAAE,IAAI,CACb,cAAc,CAAE,MAAM,CACtB,WAAW,CAAE,MAAM,CACnB,eAAe,CAAE,MAAM,CACvB,UAAU,CAAE,CAAC,CAAC,MAAM,CAAC,MAAM,CAAC,IAAI,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,CAAC,AACzC,CAAC,AACD,4BAAc,CAAC,eAAe,CAAC,UAAU,CAAC,KAAK,cAAC,CAAC,AAChD,KAAK,CAAE,IAAI,CACX,UAAU,CAAE,MAAM,CAClB,SAAS,CAAE,MAAM,CACjB,WAAW,CAAE,GAAG,CAChB,KAAK,CAAE,KAAK,CACZ,qBAAqB,CAAE,KAAK,AAC7B,CAAC"}`
+};
+async function load$1({ page, fetch: fetch2, session, context }) {
+  const res = await fetch2("/api/productlist").then((response) => response.json()).then((json) => {
+    return json;
+  });
+  const data = await res;
+  let productList = [];
+  data.data.forEach((product) => {
+    productList.push(product.data);
+  });
+  return { props: { productList } };
+}
 var Aisles = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  let { productList } = $$props;
   let aisles = [
     {
       name: "Fruits",
-      image: "strawberries.jpg"
+      image: "strawberries",
+      products: []
     },
     {
       name: "Vegetables",
-      image: "cucumber.jpg"
+      image: "cucumber",
+      products: []
     },
-    { name: "Meat", image: "steak.jpg" },
-    { name: "Dairy", image: "milk.jpg" }
+    {
+      name: "Meats",
+      image: "steak",
+      products: []
+    },
+    {
+      name: "Dairy",
+      image: "milk",
+      products: []
+    }
   ];
-  return `<h1>Aisles</h1>
-<div class="${"aisles-wrapper"}"><div class="${"aisles"}">${each(aisles, (aisle) => `<a${add_attribute("href", "/aisles/" + aisle.name, 0)}><img${add_attribute("src", aisle.image, 0)}${add_attribute("alt", aisle.name, 0)}>
-        <h2>${escape2(aisle.name)}</h2>
-      </a>`)}</div></div>`;
+  productList.forEach((product) => {
+    switch (product.aisle) {
+      case "Fruits":
+        if (aisles[0].products.length != 3) {
+          aisles[0].products.push(product);
+        }
+        break;
+      case "Vegetables":
+        if (aisles[1].products.length != 3) {
+          aisles[1].products.push(product);
+        }
+        break;
+      case "Meats":
+        if (aisles[2].products.length != 3) {
+          aisles[2].products.push(product);
+        }
+        break;
+      case "Dairy":
+        if (aisles[3].products.length != 3) {
+          aisles[3].products.push(product);
+        }
+        break;
+    }
+  });
+  if ($$props.productList === void 0 && $$bindings.productList && productList !== void 0)
+    $$bindings.productList(productList);
+  $$result.css.add(css$2);
+  return `<div class="${"aisles-wrapper svelte-ne2l2m"}"><h1 class="${"svelte-ne2l2m"}">Aisles</h1>
+	${each(aisles, (aisle) => `<div class="${"aisle-preview svelte-ne2l2m"}"><div class="${"bg svelte-ne2l2m"}"><picture><source srcset="${"/" + escape2(aisle.products[0].image) + "-400.webp, /" + escape2(aisle.products[0].image) + "-800.webp 2x"}" media="${"(max-width:400px)"}" type="${"image/webp"}">
+					<source srcset="${"/" + escape2(aisle.products[0].image) + "-400.jpg, /" + escape2(aisle.products[0].image) + "-800.jpg 2x"}" media="${"(max-width:400px)"}" type="${"image/jpeg"}">
+					<source srcset="${"/" + escape2(aisle.products[0].image) + "-600.webp, /" + escape2(aisle.products[0].image) + "-1200.webp 2x"}" media="${"(max-width:600px)"}" type="${"image/webp"}">
+					<source srcset="${"/" + escape2(aisle.products[0].image) + "-600.jpg, /" + escape2(aisle.products[0].image) + "-1200.jpg 2x"}" media="${"(max-width:600px)"}" type="${"image/jpeg"}">
+					<source srcset="${"/" + escape2(aisle.products[0].image) + "-800.webp"}" media="${"(max-width:800px)"}" type="${"image/webp"}">
+					<source srcset="${"/" + escape2(aisle.products[0].image) + "-800.jpg"}" media="${"(max-width:800px)"}" type="${"image/jpeg"}">
+					<source srcset="${"/" + escape2(aisle.products[0].image) + "-1200.webp"}" type="${"image/webp"}">
+					<source srcset="${"/" + escape2(aisle.products[0].image) + "-1200.jpg"}" type="${"image/jpeg"}">
+					<img src="${"/" + escape2(aisle.products[0].image) + "-400.jpg"}" alt="${"hi:)"}" class="${"bg-image svelte-ne2l2m"}">
+				</picture></div>
+			<p class="${"aisle-name svelte-ne2l2m"}">${escape2(aisle.name)}</p>
+			<div class="${"aisle-products svelte-ne2l2m"}">${each(aisle.products, (product) => `<div class="${"product-box svelte-ne2l2m"}"><div class="${"img-container svelte-ne2l2m"}"><picture><source srcset="${"/" + escape2(product.image) + "-120.webp, /" + escape2(product.image) + "-240.webp 2x"}" media="${"(max-width:1000px)"}" type="${"image/webp"}">
+								<source srcset="${"/" + escape2(product.image) + "-120.jpg, /" + escape2(product.image) + "-240.jpg 2x"}" media="${"(max-width:1000px)"}" type="${"image/jpeg"}">
+								<source srcset="${"/" + escape2(product.image) + "-240.webp, /" + escape2(product.image) + "-400.webp 2x"}" type="${"image/webp"}">
+								<source srcset="${"/" + escape2(product.image) + "-240.jpg, /" + escape2(product.image) + "-400.jpg 2x"}" type="${"image/jpeg"}">
+
+								<img src="${"/" + escape2(product.image) + "-240.jpg"}" alt="${"hi:)"}" class="${"bg-image svelte-ne2l2m"}">
+							</picture></div>
+						<a sveltekit:prefetch href="${"/products/" + escape2(product.name)}" class="${"svelte-ne2l2m"}">${escape2(product.name)}</a>
+					</div>`)}
+				<div class="${"clear-box svelte-ne2l2m"}"><a sveltekit:prefetch href="${"/aisles/" + escape2(aisle.name)}" class="${"more svelte-ne2l2m"}">More</a>
+				</div></div>
+		</div>`)}
+</div>`;
 });
 var index = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module",
-  "default": Aisles
+  "default": Aisles,
+  load: load$1
 });
 async function load({ page, fetch: fetch2, session, context }) {
   const aisle = page.path.split("/")[2];
-  return { props: { aisle } };
+  const res = await fetch2("/api/productlist").then((response) => response.json()).then((json) => {
+    return json;
+  });
+  const data = await res;
+  let productList = [];
+  data.data.forEach((product) => {
+    productList.push(product.data);
+  });
+  return { props: { productList, aisle } };
 }
 var U5Baisleu5D = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  let { aisle } = $$props;
+  let { aisle } = $$props, { productList } = $$props;
   let aisleProducts = [];
-  productList$1.productList.forEach((product) => {
+  productList.forEach((product) => {
     if (aisle.slice(1) === product.aisle.slice(1)) {
       aisleProducts.push(product);
     }
   });
   if ($$props.aisle === void 0 && $$bindings.aisle && aisle !== void 0)
     $$bindings.aisle(aisle);
+  if ($$props.productList === void 0 && $$bindings.productList && productList !== void 0)
+    $$bindings.productList(productList);
   return `<div class="${"aisle-wrapper"}"><div class="${"aisle"}"><h1>${escape2(aisle.charAt(0).toUpperCase() + aisle.slice(1))} Aisle</h1>
 		<div class="${"products"}">${each(aisleProducts, (product) => `${validate_component(Productcard, "Productcard").$$render($$result, { product }, {}, {})}`)}</div></div>
 </div>`;
@@ -14070,17 +17211,23 @@ var _aisle_ = /* @__PURE__ */ Object.freeze({
   "default": U5Baisleu5D,
   load
 });
+var css$1 = {
+  code: "h1.svelte-1ysqtrz{text-align:center}",
+  map: `{"version":3,"file":"signup.svelte","sources":["signup.svelte"],"sourcesContent":["<script>\\r\\nimport { goto } from \\"$app/navigation\\";\\r\\n\\r\\n\\r\\n\\tlet email;\\r\\n\\tlet password;\\r\\n\\tlet password2;\\r\\n\\tlet signUp = async () => {\\r\\n\\t\\tlet regex = /^(([^<>()\\\\[\\\\]\\\\\\\\.,;:\\\\s@\\"]+(\\\\.[^<>()\\\\[\\\\]\\\\\\\\.,;:\\\\s@\\"]+)*)|(\\".+\\"))@((\\\\[[0-9]{1,3}\\\\.[0-9]{1,3}\\\\.[0-9]{1,3}\\\\.[0-9]{1,3}])|(([a-zA-Z\\\\-0-9]+\\\\.)+[a-zA-Z]{2,}))$/\\r\\n\\t\\tif (password.value == password2.value && regex.test(email.value)) {\\r\\n\\t\\t\\tlet secret = 'admin';\\r\\n\\t\\t\\tconst res = await fetch('/api/newUser', {\\r\\n\\t\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\t\\tbody: JSON.stringify({ secret: secret, email: email.value, password: password.value })\\r\\n\\t\\t\\t})\\r\\n\\t\\t\\t\\t.catch((err) => {\\r\\n\\t\\t\\t\\t\\treturn err;\\r\\n\\t\\t\\t\\t})\\r\\n\\t\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\t\\tconsole.log(json)\\r\\n\\t\\t\\t\\t\\tif(json != undefined){\\r\\n\\t\\t\\t\\t\\t\\tgoto('/login')\\r\\n\\t\\t\\t\\t\\t};\\r\\n\\t\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t\\t});\\r\\n\\t\\t}else{\\r\\n\\t\\t\\talert('Email is invalid or passwords do not match')\\r\\n\\t\\t}\\r\\n\\t};\\r\\n<\/script>\\r\\n\\r\\n<h1>User Sign Up</h1>\\r\\n<div class=\\"form-wrapper\\">\\r\\n\\t<form action=\\"\\">\\r\\n\\t\\t<label for=\\"email\\">Email*:</label>\\r\\n\\t\\t<input bind:this={email} type=\\"text\\" name=\\"email\\" id=\\"email\\" required />\\r\\n\\t\\t<label for=\\"password\\">Password*:</label>\\r\\n\\t\\t<input bind:this={password} type=\\"password\\" name=\\"password\\" id=\\"password\\" required />\\r\\n\\t\\t<label for=\\"password2\\">Confirm Password*:</label>\\r\\n\\t\\t<input bind:this={password2} type=\\"password\\" name=\\"password2\\" id=\\"password2 required\\" />\\r\\n\\t\\t<div class=\\"buttons\\">\\r\\n\\t\\t\\t<button on:click={signUp} type=\\"button\\">Sign Up</button>\\r\\n\\t\\t</div>\\r\\n\\t\\t\\r\\n\\t</form>\\r\\n</div>\\r\\n\\r\\n<style>\\r\\n\\th1{\\r\\n\\t\\ttext-align: center;\\r\\n\\t}\\r\\n</style>\\r\\n"],"names":[],"mappings":"AAiDC,iBAAE,CAAC,AACF,UAAU,CAAE,MAAM,AACnB,CAAC"}`
+};
 var Signup = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `<h1>User Sign Up</h1>
-<div class="${"form-wrapper"}"><form action="${""}"><label for="${"fname"}">First Name:</label>
-		<input type="${"text"}" name="${"fname"}" id="${"fname"}">
-		<label for="${"email"}">Email*:</label>
-		<input type="${"text"}" name="${"email"}" id="${"email"}" required>
+  let email;
+  let password;
+  let password2;
+  $$result.css.add(css$1);
+  return `<h1 class="${"svelte-1ysqtrz"}">User Sign Up</h1>
+<div class="${"form-wrapper"}"><form action="${""}"><label for="${"email"}">Email*:</label>
+		<input type="${"text"}" name="${"email"}" id="${"email"}" required${add_attribute("this", email, 0)}>
 		<label for="${"password"}">Password*:</label>
-		<input type="${"password"}" name="${"password"}" id="${"password"}" required>
+		<input type="${"password"}" name="${"password"}" id="${"password"}" required${add_attribute("this", password, 0)}>
 		<label for="${"password2"}">Confirm Password*:</label>
-		<input type="${"password"}" name="${"password2"}" id="${"password2 required"}">
-		<button>Submit</button></form>
+		<input type="${"password"}" name="${"password2"}" id="${"password2 required"}"${add_attribute("this", password2, 0)}>
+		<div class="${"buttons"}"><button type="${"button"}">Sign Up</button></div></form>
 </div>`;
 });
 var signup = /* @__PURE__ */ Object.freeze({
@@ -14088,114 +17235,66 @@ var signup = /* @__PURE__ */ Object.freeze({
   [Symbol.toStringTag]: "Module",
   "default": Signup
 });
+var css = {
+  code: "h1.svelte-1rptoyp{text-align:center}",
+  map: `{"version":3,"file":"login.svelte","sources":["login.svelte"],"sourcesContent":["<script>\\r\\nimport { Ref } from \\"faunadb\\";\\r\\nimport { userCredentials } from '../stores';\\r\\nimport { goto } from '$app/navigation';\\r\\n\\r\\n\\r\\n\\tlet email;\\r\\n\\tlet password;\\r\\n\\tlet login = async () => {\\r\\n\\t\\tconst res = await fetch('/api/login', {\\r\\n\\t\\t\\tmethod: 'POST',\\r\\n\\t\\t\\tbody: JSON.stringify({ email: email.value, password: password.value })\\r\\n\\t\\t})\\r\\n\\t\\t\\t.catch((err)=>{return err})\\r\\n\\t\\t\\t.then((response) => response.json())\\r\\n\\t\\t\\t.then((json) => {\\r\\n\\t\\t\\t\\tconsole.log(json.data[0])\\r\\n\\t\\t\\t\\t$userCredentials.secret = json.data[0].secret\\r\\n\\t\\t\\t\\t$userCredentials.type = json.data[1]\\r\\n\\t\\t\\t\\t$userCredentials.email = json.data[2]\\r\\n\\t\\t\\t\\tswitch(json.data[1]){\\r\\n\\t\\t\\t\\t\\tcase '':\\r\\n\\t\\t\\t\\t\\t\\tbreak;\\r\\n\\t\\t\\t\\t\\tcase 'user':\\r\\n\\t\\t\\t\\t\\t\\tgoto('/')\\r\\n\\t\\t\\t\\t\\t\\tbreak;\\r\\n\\t\\t\\t\\t\\tcase 'manager':\\r\\n\\t\\t\\t\\t\\t\\tgoto('/backstore/products')\\r\\n\\t\\t\\t\\t\\t\\tbreak;\\r\\n\\t\\t\\t\\t}\\r\\n\\t\\t\\t\\t\\r\\n\\t\\t\\t\\treturn json;\\r\\n\\t\\t\\t});\\r\\n\\t};\\r\\n<\/script>\\r\\n\\r\\n<h1>User Login</h1>\\r\\n<div class=\\"form-wrapper\\">\\r\\n\\t<form action=\\"\\">\\r\\n\\t\\t<label for=\\"email\\">Email*:</label>\\r\\n\\t\\t<input bind:this={email} type=\\"text\\" name=\\"email\\" id=\\"email\\" required />\\r\\n\\t\\t<label for=\\"password\\">Password*:</label>\\r\\n\\t\\t<input bind:this={password} type=\\"password\\" name=\\"password\\" id=\\"password\\" required />\\r\\n\\t\\t<div class=\\"buttons\\">\\r\\n\\t\\t\\t<button on:click={login} type=\\"button\\">Submit</button>\\r\\n\\t\\t\\t<button on:click={login} type=\\"button\\">Forget Password</button>\\r\\n\\t\\t</div>\\r\\n\\t</form>\\r\\n</div>\\r\\n<style lang=\\"scss\\">h1 {\\n  text-align: center;\\n}</style>"],"names":[],"mappings":"AAiDmB,EAAE,eAAC,CAAC,AACrB,UAAU,CAAE,MAAM,AACpB,CAAC"}`
+};
 var Login = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  return `<h1>User Login</h1>
+  let $$unsubscribe_userCredentials;
+  $$unsubscribe_userCredentials = subscribe(userCredentials, (value) => value);
+  let email;
+  let password;
+  $$result.css.add(css);
+  $$unsubscribe_userCredentials();
+  return `<h1 class="${"svelte-1rptoyp"}">User Login</h1>
 <div class="${"form-wrapper"}"><form action="${""}"><label for="${"email"}">Email*:</label>
-		<input type="${"text"}" name="${"email"}" id="${"email"}" required>
+		<input type="${"text"}" name="${"email"}" id="${"email"}" required${add_attribute("this", email, 0)}>
 		<label for="${"password"}">Password*:</label>
-		<input type="${"password"}" name="${"password"}" id="${"password"}" required>
-		<div class="${"buttons"}"><button>Submit</button>
-			<button>Forget Password</button></div></form></div>`;
+		<input type="${"password"}" name="${"password"}" id="${"password"}" required${add_attribute("this", password, 0)}>
+		<div class="${"buttons"}"><button type="${"button"}">Submit</button>
+			<button type="${"button"}">Forget Password</button></div></form>
+</div>`;
 });
 var login = /* @__PURE__ */ Object.freeze({
   __proto__: null,
   [Symbol.toStringTag]: "Module",
   "default": Login
 });
-var subscriber_queue2 = [];
-function writable2(value, start = noop2) {
-  let stop;
-  const subscribers = new Set();
-  function set(new_value) {
-    if (safe_not_equal2(value, new_value)) {
-      value = new_value;
-      if (stop) {
-        const run_queue = !subscriber_queue2.length;
-        for (const subscriber of subscribers) {
-          subscriber[1]();
-          subscriber_queue2.push(subscriber, value);
-        }
-        if (run_queue) {
-          for (let i = 0; i < subscriber_queue2.length; i += 2) {
-            subscriber_queue2[i][0](subscriber_queue2[i + 1]);
-          }
-          subscriber_queue2.length = 0;
-        }
-      }
-    }
-  }
-  function update(fn) {
-    set(fn(value));
-  }
-  function subscribe2(run2, invalidate = noop2) {
-    const subscriber = [run2, invalidate];
-    subscribers.add(subscriber);
-    if (subscribers.size === 1) {
-      stop = start(set) || noop2;
-    }
-    run2(value);
-    return () => {
-      subscribers.delete(subscriber);
-      if (subscribers.size === 0) {
-        stop();
-        stop = null;
-      }
-    };
-  }
-  return { set, update, subscribe: subscribe2 };
-}
-var cart$1 = writable2([
-  {
-    "name": "Strawberries",
-    "description": "Organic strawberries, 0.5kg",
-    "origin": "Ontario",
-    "price": 4.49,
-    "rebate": 0,
-    "quantity": 100,
-    "image": "strawberries.jpg",
-    "aisle": "Fruits",
-    "amount": 1
-  },
-  {
-    "name": "Blueberries",
-    "description": "Organic blueberries, 0.5kg",
-    "origin": "Ontario",
-    "price": 4.49,
-    "rebate": 1,
-    "quantity": 100,
-    "image": "blueberries.jpg",
-    "aisle": "Fruits",
-    "amount": 1
-  }
-]);
 var Cart = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   let $cart, $$unsubscribe_cart;
   $$unsubscribe_cart = subscribe(cart$1, (value) => $cart = value);
   let sum = 0;
+  let totalQuantity = 0;
   {
     {
+      totalQuantity = 0;
       sum = 0;
       Object.values($cart).map((item) => {
-        sum = sum + item.price;
+        totalQuantity = totalQuantity + item.amount;
+        sum = sum + (item.price - item.rebate) * item.amount;
       });
+      if (typeof window !== "undefined") {
+        localStorage.setItem("cart", JSON.stringify($cart));
+      }
     }
   }
   $$unsubscribe_cart();
-  return `<div class="${"cart-wrapper"}"><h1>Shopping Cart (${escape2($cart.length)})</h1>
-	<div class="${"cart"}"><div class="${"items"}">${each($cart, (product) => `<div class="${"item"}"><img${add_attribute("src", "/" + product.image, 0)}${add_attribute("alt", product.name, 0)}>
+  return `<div class="${"cart-wrapper"}"><h1>Shopping Cart (${escape2(totalQuantity)})</h1>
+	<div class="${"cart"}"><div class="${"items"}">${each($cart, (product) => `<div class="${"item"}"><img src="${"/" + escape2(product.image) + "-120.jpg"}" alt="${"hi:)"}" class="${"bg-image"}">
+
 					<div class="${"text"}"><p class="${"name"}">${escape2(product.name + " (" + product.amount + ")")}</p>
-						${product.rebate != 0 ? `<p class="${"price"}">${escape2("$" + (product.price - product.rebate))}</p>` : `<p class="${"price"}">${escape2("$" + product.price)}</p>`}
+						${product.rebate != 0 ? `<p class="${"price"}">${escape2("$" + (product.price - product.rebate).toFixed(2))}</p>` : `<p class="${"price"}">${escape2("$" + parseFloat(product.price).toFixed(2))}</p>`}
 						<div class="${"buttons"}"><span>+</span>
 							<span>-</span>
 							<svg viewBox="${"0 0 24 24"}" fill="${"var(--dark-text)"}"><path d="${"M0 0h24v24H0V0z"}" fill="${"none"}"></path><path d="${"M16 9v10H8V9h8m-1.5-6h-5l-1 1H5v2h14V4h-3.5l-1-1zM18 7H6v12c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7z"}"></path></svg>
 						</div></div>
 				</div>`)}</div>
-		<div class="${"summary"}"><p><i>${escape2($cart.length)} Items - $${escape2(sum.toFixed(2))}</i></p>
+		<div class="${"summary"}"><p><i>${escape2(totalQuantity)} Items - $${escape2(sum.toFixed(2))}</i></p>
 			<p><i>GST - $${escape2((sum * 0.05).toFixed(2))}</i></p>
 			<p><i>QST - $${escape2((sum * 0.09975).toFixed(2))}</i></p>
 			<p class="${"total"}">Total: $${escape2((sum * 1.14975).toFixed(2))}</p></div>
 		<div class="${"buttons"}"><button class="${"checkout"}">Checkout</button>
-			<button class="${"continue"}">Continue Shopping</button></div></div>
+			<a sveltekit:prefetch class="${"continue"}" href="${"/"}">Continue Shopping</a></div></div>
 </div>`;
 });
 var cart = /* @__PURE__ */ Object.freeze({
