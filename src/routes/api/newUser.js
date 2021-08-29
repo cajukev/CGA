@@ -4,11 +4,11 @@ import faunadb from 'faunadb';
 export async function post(request) {
 	const q = faunadb.query;
   const items = JSON.parse(request.body);
-	if(items.secret == 'admin'){
-		const secret = import.meta.env.VITE_FAUNA_ADMIN
-	}else{
-		const secret = items.secret;
-	}
+
+		const secret = import.meta.env.VITE_FAUNA_ADMIN;
+	
+		
+	
   const email = items.email;
   const password = items.password;
   
