@@ -4,7 +4,7 @@ export async function post(request) {
 	const q = faunadb.query;
 	const items = JSON.parse(request.body);
 	const name = items.name;
-	const secret = items.secret;
+	const secret = import.meta.env.VITE_FAUNA_ADMIN;
 	const client = new faunadb.Client({
 		secret: secret
 	});
