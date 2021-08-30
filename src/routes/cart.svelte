@@ -34,30 +34,30 @@
 	};
 
 	let checkout = async () => {
-		let secret = JSON.parse(localStorage.getItem('userCredentials')).secret
-		let email = JSON.parse(localStorage.getItem('userCredentials')).email
+		let secret = JSON.parse(localStorage.getItem('userCredentials')).secret;
+		let email = JSON.parse(localStorage.getItem('userCredentials')).email;
 		const res = await fetch('/api/checkout', {
 			method: 'POST',
 			body: JSON.stringify({ secret: secret, user: email, cart: $cart })
 		})
-			.catch((err)=>{return err})
 			.then((response) => response.json())
 			.then((json) => {
-				console.log(json.data)
-				switch(json.data){
-					case '':
-						break;
-					case 'user':
-						goto('/')
-						break;
-					case 'manager':
-						goto('/backstore/products')
-						break;
+				if (typeof json.data == 'undefined') {
+					alert('You are not allowed to checkout! >:(');
+				} else {
+					switch (json.data) {
+						case 'user':
+							goto('/');
+							break;
+						case 'manager':
+							goto('/backstore/products');
+							break;
+					}
+					$cart = [];
 				}
-				
+
 				return json;
 			});
-			$cart = []
 	};
 </script>
 
@@ -67,14 +67,14 @@
 		<div class="items">
 			{#each $cart as product}
 				<div class="item">
-					<img src="/{product.image}-120.jpg" alt="hi:)" class="bg-image"/>
+					<img src="/{product.image}-120.jpg" alt="hi:)" class="bg-image" />
 
 					<div class="text">
 						<p class="name">{product.name + ' (' + product.amount + ')'}</p>
 						{#if product.rebate != 0}
 							<p class="price">{'$' + (product.price - product.rebate).toFixed(2)}</p>
 						{:else}
-							<p class="price">{'$' + (parseFloat(product.price).toFixed(2))}</p>
+							<p class="price">{'$' + parseFloat(product.price).toFixed(2)}</p>
 						{/if}
 						<div class="buttons">
 							<span on:click={handlePlus(product)}>+</span>
@@ -103,4 +103,8 @@
 </div>
 
 <style>
+	.item .buttons span,
+	.item .buttons svg {
+		cursor: pointer;
+	}
 </style>

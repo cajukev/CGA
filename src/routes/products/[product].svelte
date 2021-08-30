@@ -53,7 +53,7 @@
 		
 		for (var i = 0 ; i < $cart.length ; i++){
 			if($cart[i].name == productName){
-				$cart[i].amount = parseInt($cart[i].amount) + qty
+				$cart[i].amount = parseInt($cart[i].amount) + parseInt(qty)
 				return false;
 			}
 		}

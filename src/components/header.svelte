@@ -6,20 +6,11 @@ import { Logout } from 'faunadb';
 	$: {
 		totalQuantity = 0;
 		Object.values($cart).map((item) => {
-			totalQuantity = totalQuantity + item.amount;
+			totalQuantity = (parseInt(totalQuantity) + parseInt(item.amount));
 		});
 	}
 	let logout = async () => {
-		const res = await fetch('/api/login', {
-			method: 'POST',
-			body: JSON.stringify({ secret: $userCredentials.secret})
-		})
-			.catch((err)=>{return err})
-			.then((json) => {
-				$userCredentials.secret = ''
-				$userCredentials.type = ''
-				return json;
-			});
+		$userCredentials = {type:''}
 	};
 </script>
 

@@ -110,6 +110,9 @@
       flex-wrap: wrap;
       & .item{
         margin-right: 1rem;
+				& span, svg {
+					cursor: pointer;
+				}
       }
     }
   }

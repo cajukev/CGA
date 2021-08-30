@@ -4,7 +4,7 @@ import faunadb from 'faunadb';
 export async function post(request) {
 	const q = faunadb.query;
   const items = JSON.parse(request.body);
-	const secret = import.meta.env.VITE_FAUNA_ADMIN;
+	const secret = items.secret;
   const user = items.user
   const cart = items.cart
   
@@ -21,6 +21,9 @@ export async function post(request) {
         }
       })
 		)
+		.catch((err) => {
+			return err
+		})
 		.then((ret) => {
 			return ret;
 		})

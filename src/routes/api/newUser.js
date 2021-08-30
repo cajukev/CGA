@@ -4,10 +4,7 @@ import faunadb from 'faunadb';
 export async function post(request) {
 	const q = faunadb.query;
   const items = JSON.parse(request.body);
-
-		const secret = import.meta.env.VITE_FAUNA_ADMIN;
-	
-		
+	const secret = import.meta.env.VITE_FAUNA_ADMIN;
 	
   const email = items.email;
   const password = items.password;
